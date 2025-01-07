@@ -1,4 +1,4 @@
-import { FileFormat } from "../../shared/FileFormats";
+import { FileFormat } from "../../shared/enums/FileFormats";
 import type { DocumentMetadata } from "./DocumentMetadata";
 
 export class Document {
@@ -9,6 +9,7 @@ export class Document {
     public updatedAt: Date;
     public creatorId: string;
     public documentFormat: FileFormat;
+    public updatedBy: string;
 
     constructor(
         creatorId: string,
@@ -17,9 +18,10 @@ export class Document {
         this.id = crypto.randomUUID();
         this.name = metadata.name;
         this.tags = metadata.tags;
-        this.createdAt = new Date();
-        this.updatedAt = metadata.updatedAt;
+        this.createdAt = metadata.createdAt ?? new Date();
+        this.updatedAt = metadata.updatedAt ?? new Date();
         this.creatorId= creatorId;
         this.documentFormat = metadata.documentFormat;
+        this.updatedBy = metadata.updatedBy ?? creatorId;
     }
 }

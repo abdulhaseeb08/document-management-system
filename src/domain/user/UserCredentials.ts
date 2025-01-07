@@ -1,4 +1,4 @@
-import { UserRole } from "../../shared/UserRole";
+import { UserRole } from "../../shared/enums/UserRole";
 
 export interface UserCredentials {
   email: string;
