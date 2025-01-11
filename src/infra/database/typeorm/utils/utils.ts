@@ -1,5 +1,5 @@
 import { DataSource } from 'typeorm';
-import type { CommandResult } from '../../../../shared/types/types';
+import type { CommandResult } from '../../../../shared/types';
 
 export const initializeDataSource = async(dataSource: DataSource): Promise<CommandResult<number>> => {
     try {

@@ -3,7 +3,6 @@ import { DataSource } from 'typeorm';
 import { DocumentEntity } from './entities/DocumentEntity';
 import { UserEntity } from './entities/UserEntity';
 import { PermissionEntity } from './entities/PermissionEntity';
-import logger from '../../../presentation/logger/pino/logger';
 
 const AppDataSource = new DataSource({
   type: 'postgres',

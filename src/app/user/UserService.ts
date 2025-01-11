@@ -1,14 +1,9 @@
-import { Document } from "../../domain/document/Document";
-import type { DocumentRepository } from "../../domain/document/port/DocumentRepository";
-import type { DocumentMetadata } from "../../domain/document/DocumentMetadata";
-import { injectable, inject } from "inversify";
-import { INVERIFY_IDENTIFIERS } from "../../infra/di/inversify/inversify.types";
+import type { UserRepository } from "../../domain/user/port/UserRepository";
 
-@injectable()
-export class DocumentService {
-    constructor(@inject(INVERIFY_IDENTIFIERS.DocumentRepository) private documentRepository: DocumentRepository) {}
+export class UserService {
+    constructor(private userRepository: UserRepository) {}
 
-    public async createDocument(creatorId: string, metadata: DocumentMetadata): Promise<Document> {
+    public async createuser(creatorId: string, metadata: DocumentMetadata): Promise<Document> {
         const doc = new Document(creatorId, metadata);
         await this.documentRepository.create(doc);
         return doc

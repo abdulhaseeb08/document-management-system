@@ -1,5 +1,5 @@
 import { Permission } from "../Permisson";
-import { PermissionType } from "../../../shared/PermissionType";
+import { PermissionType } from "../../../shared/enums/PermissionType";
 
 export interface PermissionRepository {
     grantPermission(permission: Permission): Promise<void>;
