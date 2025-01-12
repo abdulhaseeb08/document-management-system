@@ -1,11 +1,12 @@
-import { UserRole } from "../../../../shared/enums/UserRole"
+
 import {
     Entity,
     PrimaryColumn,
     Column,
     CreateDateColumn
 }
-from "typeorm"
+from "typeorm";
+import { PermissionType } from "../../../../shared/enums/PermissionType";
 
 
 
@@ -23,8 +24,8 @@ export class PermissionEntity {
     @Column({type: "varchar", length: 36, nullable: false})
     documentId: string 
 
-    @Column({type: "enum", enum: UserRole, nullable: false})
-    permissionType: string
+    @Column({type: "enum", enum: PermissionType, nullable: false})
+    permissionType: PermissionType
 
     @CreateDateColumn()
     createdAt: Date

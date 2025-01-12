@@ -12,7 +12,7 @@ export class HasherService {
     }
 
     public async comparePassword(password: string, hashedPassword: string): Promise<boolean> {
-        return await this.comparePassword(password, hashedPassword);
+        return await this.hasher.compare(password, hashedPassword);
     }
 
 }

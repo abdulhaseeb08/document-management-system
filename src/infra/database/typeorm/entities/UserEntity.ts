@@ -5,7 +5,8 @@ import {
     CreateDateColumn,
     UpdateDateColumn
 }
-from "typeorm"
+from "typeorm";
+import { UserRole } from "../../../../shared/enums/UserRole"
 
 @Entity()
 export class UserEntity {
@@ -18,9 +19,12 @@ export class UserEntity {
     @Column({type: "text", nullable: false})
     password: string 
 
+    @Column({type: "enum", enum: UserRole, nullable: false})
+    userRole: UserRole
+
     @CreateDateColumn()
-    createdAt: string
+    createdAt: Date
 
     @UpdateDateColumn()
-    updatedAt: string
+    updatedAt: Date
 }

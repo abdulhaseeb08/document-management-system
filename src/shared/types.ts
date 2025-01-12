@@ -1,1 +1,1 @@
-export type CommandResult<T> = { success: true; value: T } | { success: false; error: Error };
+export type CommandResult<T> = { success: true; value: T } | { success: false; error: Error | T} ;

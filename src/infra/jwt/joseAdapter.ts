@@ -1,0 +1,32 @@
+import type { JWTAuth } from "../../app/auth/jwt/jwt";
+import type { JWTPayload } from "jose";
+import type { CommandResult } from "../../shared/types";
+import { KeyObject} from 'crypto';
+import { SignJWT, jwtVerify } from "jose";
+import { injectable } from "inversify";
+
+@injectable()
+export class JoseJWTAdapter implements JWTAuth {
+
+    public async sign(payload:Record<string, unknown>, alg: string, secret: KeyObject, expTime: string): Promise<CommandResult<string>> {
+        try {
+            const token = await new SignJWT(payload)
+                            .setIssuedAt()
+                            .setProtectedHeader({alg: `${alg}`})
+                            .setExpirationTime(expTime)
+                            .sign(secret)
+            return {success: true, value: token};
+        } catch (err) {
+            return {success: false, error: err as Error};
+        }
+    }
+
+    public async verify(token: string, secret: KeyObject): Promise<CommandResult<JWTPayload>> {
+        try {
+            const { payload } = await jwtVerify(token, secret);
+            return {success: true, value: payload};
+        } catch (err) {
+            return {success: false, error: err as Error};
+        }
+    }
+}
