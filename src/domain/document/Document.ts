@@ -2,7 +2,7 @@ import { FileFormat } from "../../shared/enums/FileFormats";
 import type { DocumentMetadata } from "./DocumentMetadata";
 
 export class Document {
-    public readonly id: string;
+    public id: string;
     public name: string;
     public tags: string[];
     public createdAt: Date;
@@ -13,9 +13,10 @@ export class Document {
 
     constructor(
         creatorId: string,
-        metadata: DocumentMetadata
+        metadata: DocumentMetadata,
+        id?: string
     ) {
-        this.id = crypto.randomUUID();
+        this.id = id ?? crypto.randomUUID();
         this.name = metadata.name;
         this.tags = metadata.tags;
         this.createdAt = metadata.createdAt ?? new Date();

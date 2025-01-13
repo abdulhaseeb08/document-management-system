@@ -1,7 +1,6 @@
 import type { UserRepository } from "../../../domain/user/port/UserRepository";
 import { UserEntity } from "../../database/typeorm/entities/UserEntity";
 import { User } from "../../../domain/user/User";
-import type { UserCredentials } from "../../../domain/user/UserCredentials";
 import { Repository} from "typeorm";
 import { DataSource } from 'typeorm';
 import type { CommandResult } from "../../../shared/types";
@@ -70,7 +69,8 @@ export class TypeORMUserRepository implements UserRepository {
                 email: entity.email,
                 password: entity.password
             },
-            entity.userRole
+            entity.userRole,
+            entity.id
         );
     }
 }

@@ -4,6 +4,6 @@ import type { CommandResult } from "../../../shared/types";
 
 export interface PermissionRepository {
     grantPermission(permission: Permission): Promise<CommandResult<string>>;
-    revokePermission(requestorId: string, userId: string, documentId: string, permissionType: PermissionType): Promise<CommandResult<string>>;
-    hasPermission(userId: string, documentId: string, permissionType: PermissionType): Promise<boolean>;
+    getPermissions(userId: string): Promise<Permission[] | null>;
+    revokePermission(id: string): Promise<CommandResult<string>>;
 }

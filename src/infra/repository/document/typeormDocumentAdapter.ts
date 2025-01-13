@@ -104,7 +104,8 @@ export class TypeORMDocumnetRepository implements DocumentRepository {
                     updatedAt: singleEntity.updatedAt,
                     updatedBy: singleEntity.updatedBy,
                     documentFormat: singleEntity.documentFormat
-                }
+                },
+                singleEntity.id
             ));
         }
     
@@ -117,7 +118,8 @@ export class TypeORMDocumnetRepository implements DocumentRepository {
                 updatedAt: entity.updatedAt,
                 updatedBy: entity.updatedBy,
                 documentFormat: entity.documentFormat
-            }
+            },
+            entity.id
         );
     }
 }
