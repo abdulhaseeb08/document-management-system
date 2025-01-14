@@ -8,7 +8,6 @@ export const DocumentMetadataSchema = z.object({
     updatedAt: z.date(),
     updatedBy: UUIDSchema,
     documentFormat: z.nativeEnum(FileFormat),
-    completed: z.boolean().default(false), 
 }).strict();
 
 export const DocumentSchema = z.object({

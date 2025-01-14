@@ -4,19 +4,23 @@ import {
     PrimaryColumn,
     Column,
     CreateDateColumn,
-    UpdateDateColumn
+    UpdateDateColumn,
+    ManyToOne,
+    OneToMany,
+    JoinColumn,
 }
 from "typeorm"
+import { UserModel } from "./UserModel"
 
 @Entity()
-export class DocumentEntity {
+export class DocumentModel {
     @PrimaryColumn({type: "varchar", length: 36, nullable: false})
     id: string
 
-    @Column({type: "varchar", length: 36, nullable: false})
-    creatorId: string
+    @ManyToOne(() => UserModel, (user) => user.documents)
+    creator: UserModel 
 
-    @Column({type: "text", nullable: false})
+    @Column({type: "varchar", length: 100, nullable: false})
     name: string
 
     @Column({type: "jsonb", nullable: true})

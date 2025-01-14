@@ -3,15 +3,23 @@ import {
     PrimaryColumn,
     Column,
     CreateDateColumn,
-    UpdateDateColumn
+    UpdateDateColumn,
+    OneToMany
 }
 from "typeorm";
 import { UserRole } from "../../../../shared/enums/UserRole"
+import { DocumentModel } from "./DocumentModel";
 
 @Entity()
-export class UserEntity {
+export class UserModel {
     @PrimaryColumn({type: "varchar", length: 36, nullable: false})
     id: string
+
+    @Column({type: "varchar", length: 36, nullable: false})
+    updatedBy: string
+
+    @Column({type: "varchar", length: 50, nullable: false})
+    name: string
 
     @Column({type: "varchar", length: 320, nullable: false})
     email: string
@@ -27,4 +35,7 @@ export class UserEntity {
 
     @UpdateDateColumn()
     updatedAt: Date
+
+    @OneToMany(() => DocumentModel, (document) => document.id)
+    documents: DocumentModel[]
 }

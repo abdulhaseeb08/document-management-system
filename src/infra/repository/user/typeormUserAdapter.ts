@@ -1,19 +1,19 @@
-import type { UserRepository } from "../../../domain/user/port/UserRepository";
-import { UserEntity } from "../../database/typeorm/entities/UserEntity";
-import { User } from "../../../domain/user/User";
+import type { UserRepository } from "../../../domain/entities/user/port/UserRepository";
+import { UserModel } from "../../database/typeorm/models/UserModel";
+import type { User } from "../../../domain/entities/user/User";
 import { Repository} from "typeorm";
 import { DataSource } from 'typeorm';
-import type { CommandResult } from "../../../shared/types";
+import type { CommandResult, UUID } from "../../../shared/types";
 import { injectable } from "inversify";
 
 @injectable()
 export class TypeORMUserRepository implements UserRepository {
-    private repository: Repository<UserEntity>;
+    private repository: Repository<UserModel>;
     public dataSource: DataSource;
 
     constructor(dataSource: DataSource) {
         this.dataSource = dataSource;
-        this.repository = dataSource.getRepository(UserEntity);
+        this.repository = dataSource.getRepository(UserModel);
     }
 
     public async create(user: User): Promise<CommandResult<string>> {
@@ -53,24 +53,31 @@ export class TypeORMUserRepository implements UserRepository {
         }
     }
 
-    private toEntity(user: User): UserEntity {
-        const entity = new UserEntity();
+    private toEntity(user: User): UserModel {
+        const entity = new UserModel();
         entity.id = user.id;
         entity.email = user.email;
         entity.password = user.password;
         entity.createdAt = user.createdAt;
-        entity.updatedAt = user.updatedAt;
+        entity.updatedAt = user.userMetadata.updatedAt;
+        entity.userRole = user.userMetadata.userRole;
+        entity.updatedBy = user.updatedBy;
+        entity.name = user.userMetadata.name;
         return entity;
     }
 
-    private toDomain(entity: UserEntity): User{
-        return new User(
-            {
-                email: entity.email,
-                password: entity.password
+    private toDomain(entity: UserModel): User{
+        return {
+            id: entity.id as UUID,
+            createdAt: entity.createdAt,
+            email: entity.email,
+            password: entity.password,
+            userMetadata: {
+                name: entity.name,
+                updatedAt: entity.updatedAt,
+                userRole: entity.userRole
             },
-            entity.userRole,
-            entity.id
-        );
+            updatedBy: entity.updatedBy as UUID
+        };
     }
 }
