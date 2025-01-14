@@ -1,7 +1,7 @@
-import type { Hasher } from "./port/Hasher";
+import type { Hasher } from "../../ports/hasher/Hasher";
 import { injectable, inject } from "inversify";
-import { INVERIFY_IDENTIFIERS } from "../../infra/di/inversify/inversify.types";
-import type { CommandResult } from "../../shared/types";
+import { INVERIFY_IDENTIFIERS } from "../../../infra/di/inversify/inversify.types";
+import type { CommandResult } from "../../../shared/types";
 
 @injectable()
 export class HasherService {

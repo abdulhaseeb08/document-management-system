@@ -1,4 +1,4 @@
-import type { DatabaseManager } from "../../../app/database/database";
+import type { DatabaseManager } from "../../../app/ports/database/database";
 import { Table } from "typeorm";
 import { DataSource } from 'typeorm';
 import type {QueryRunner} from 'typeorm';

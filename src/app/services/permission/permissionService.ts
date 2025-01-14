@@ -1,10 +1,10 @@
-import type { Permission } from "../../domain/entities/permission/Permisson";
-import { PermissionEntity } from "../../domain/entities/permission/PermissionEntity";
-import type { PermissionRepository } from "../../domain/entities/permission/port/PermissionRepository";
+import type { Permission } from "../../../domain/entities/permission/Permisson";
+import { PermissionEntity } from "../../../domain/entities/permission/PermissionEntity";
+import type { PermissionRepository } from "../../../domain/entities/permission/port/PermissionRepository";
 import { injectable, inject } from "inversify";
-import { INVERIFY_IDENTIFIERS } from "../../infra/di/inversify/inversify.types";
-import { PermissionType } from "../../shared/enums/PermissionType";
-import type { CommandResult, UUID } from "../../shared/types";
+import { INVERIFY_IDENTIFIERS } from "../../../infra/di/inversify/inversify.types";
+import { PermissionType } from "../../../shared/enums/PermissionType";
+import type { CommandResult, UUID } from "../../../shared/types";
 
 @injectable()
 export class PermissionService {

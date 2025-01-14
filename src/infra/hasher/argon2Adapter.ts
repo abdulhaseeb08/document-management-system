@@ -1,5 +1,5 @@
 import argon2 from "argon2";
-import type { Hasher } from "../../app/hasher/port/Hasher";
+import type { Hasher } from "../../app/services/hasher/port/Hasher";
 import type { CommandResult } from "../../shared/types";
 import { injectable } from "inversify";
 

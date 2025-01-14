@@ -1,10 +1,10 @@
-import type { CommandResult, UUID } from "../../shared/types";
-import type { Document } from "../../domain/entities/document/Document";
-import type { DocumentRepository } from "../../domain/entities/document/port/DocumentRepository";
-import type { DocumentMetadata } from "../../domain/valueObjects/DocumentMetadata";
-import { DocumentEntity } from "../../domain/entities/document/DocumentEntity";
+import type { CommandResult, UUID } from "../../../shared/types";
+import type { Document } from "../../../domain/entities/document/Document";
+import type { DocumentRepository } from "../../../domain/entities/document/port/DocumentRepository";
+import type { DocumentMetadata } from "../../../domain/valueObjects/DocumentMetadata";
+import { DocumentEntity } from "../../../domain/entities/document/DocumentEntity";
 import { injectable, inject } from "inversify";
-import { INVERIFY_IDENTIFIERS } from "../../infra/di/inversify/inversify.types";
+import { INVERIFY_IDENTIFIERS } from "../../../infra/di/inversify/inversify.types";
 
 @injectable()
 export class DocumentService {

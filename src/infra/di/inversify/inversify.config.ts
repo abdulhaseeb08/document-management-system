@@ -2,12 +2,12 @@ import { Container } from "inversify";
 import type { DocumentRepository } from "../../../domain/entities/document/port/DocumentRepository";
 import { DocumentService } from "../../../app/document/DocumentService";
 import { TypeORMDocumnetRepository } from "../../repository/document/typeormDocumentAdapter";
-import type { Hasher } from "../../../app/hasher/port/Hasher";
-import { HasherService } from "../../../app/hasher/HasherService";
+import type { Hasher } from "../../../app/services/hasher/port/Hasher";
+import { HasherService } from "../../../app/services/hasher/HasherService";
 import { Argon2Adpater } from "../../hasher/argon2Adapter";
-import type { JWTAuth } from "../../../app/auth/jwt/jwt";
+import type { JWTAuth } from "../../../app/ports/jwt/jwt";
 import { JoseJWTAdapter } from "../../jwt/joseAdapter";
-import { AuthService } from "../../../app/auth/AuthService";
+import { AuthService } from "../../../app/services/auth/AuthService";
 import { INVERIFY_IDENTIFIERS } from "./inversify.types";
 
 const container = new Container();

@@ -1,4 +1,4 @@
-import type { JWTAuth } from "../../app/auth/jwt/jwt";
+import type { JWTAuth } from "../../app/ports/jwt/jwt";
 import type { JWTPayload } from "jose";
 import type { CommandResult } from "../../shared/types";
 import { KeyObject} from 'crypto';

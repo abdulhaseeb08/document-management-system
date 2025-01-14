@@ -1,13 +1,12 @@
-import type { UserRepository } from "../../domain/entities/user/port/UserRepository";
-import { UserRole } from "../../shared/enums/UserRole";
-import type { User } from "../../domain/entities/user/User";
-import { UserEntity } from "../../domain/entities/user/UserEntity";
+import type { UserRepository } from "../../../domain/entities/user/port/UserRepository";
+import type { User } from "../../../domain/entities/user/User";
+import { UserEntity } from "../../../domain/entities/user/UserEntity";
 import { createSecretKey } from 'crypto';
-import type { Hasher } from "../hasher/port/Hasher";
+import type { Hasher } from "../../ports/hasher/Hasher";
 import { injectable, inject } from "inversify";
-import { INVERIFY_IDENTIFIERS } from "../../infra/di/inversify/inversify.types";
-import { JoseJWTAdapter } from "../../infra/jwt/joseAdapter";
-import type { CommandResult } from "../../shared/types";
+import { INVERIFY_IDENTIFIERS } from "../../../infra/di/inversify/inversify.types";
+import { JoseJWTAdapter } from "../../../infra/jwt/joseAdapter";
+import type { CommandResult } from "../../../shared/types";
 
 @injectable()
 export class AuthService {
