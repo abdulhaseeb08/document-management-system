@@ -1,6 +1,6 @@
-import type { PermissionRepository } from "../../../domain/permission/port/PermissionRepository";
+import type { PermissionRepository } from "../../../domain/entities/permission/port/PermissionRepository";
 import { PermissionEntity } from "../../database/typeorm/entities/PermissionEntity";
-import { Permission } from "../../../domain/permission/Permisson";
+import { Permission } from "../../../domain/entities/permission/Permisson";
 import { Repository} from "typeorm";
 import { DataSource } from 'typeorm';
 import type { CommandResult } from "../../../shared/types";

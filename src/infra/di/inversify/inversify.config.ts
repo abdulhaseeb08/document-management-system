@@ -1,7 +1,7 @@
 import { Container } from "inversify";
-import type { DocumentRepository } from "../../../domain/document/port/DocumentRepository";
+import type { DocumentRepository } from "../../../domain/entities/document/port/DocumentRepository";
 import { DocumentService } from "../../../app/document/DocumentService";
-import { TypeORMDocumnetRepository } from "../../repository/document/typeormAdapter";
+import { TypeORMDocumnetRepository } from "../../repository/document/typeormDocumentAdapter";
 import type { Hasher } from "../../../app/hasher/port/Hasher";
 import { HasherService } from "../../../app/hasher/HasherService";
 import { Argon2Adpater } from "../../hasher/argon2Adapter";

@@ -1,10 +1,10 @@
-import type { DocumentRepository } from "../../../domain/document/port/DocumentRepository";
-import { Document } from "../../../domain/document/Document";
+import type { DocumentRepository } from "../../../domain/entities/document/port/DocumentRepository";
+import { Document } from "../../../domain/entities/document/DocumentEntity";
 import { DocumentEntity } from "../../database/typeorm/entities/DocumentEntity";
 import { Repository} from "typeorm";
 import { DataSource } from 'typeorm';
 import type { CommandResult } from "../../../shared/types";
-import type { DocumentMetadata } from "../../../domain/document/DocumentMetadata";
+import type { DocumentMetadata } from "../../../domain/entities/document/Document";
 import { injectable } from "inversify";
 
 @injectable()
@@ -48,7 +48,7 @@ export class TypeORMDocumnetRepository implements DocumentRepository {
                 const res = await this.repository.delete(id);
                 return { success: true, value: `Rows affected: ${res.affected}`};
             }
-            return { success: true, value: `IdRows affected: 0`};
+            return { success: false, error: `Document does not exist`};
         } catch (err) {
             return { success: false, error: err as Error };
         }

@@ -1,5 +1,4 @@
-import { Permission } from "../Permisson";
-import { PermissionType } from "../../../../shared/enums/PermissionType";
+import type { Permission } from "../Permisson";
 import type { CommandResult } from "../../../../shared/types";
 
 export interface PermissionRepository {

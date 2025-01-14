@@ -1,6 +1,6 @@
-import { Document } from "../../domain/document/Document";
-import type { DocumentRepository } from "../../domain/document/port/DocumentRepository";
-import type { DocumentMetadata } from "../../domain/document/DocumentMetadata";
+import { Document } from "../../domain/entities/document/DocumentEntity";
+import type { DocumentRepository } from "../../domain/entities/document/port/DocumentRepository";
+import type { DocumentMetadata } from "../../domain/entities/document/Document";
 import { injectable, inject } from "inversify";
 import { INVERIFY_IDENTIFIERS } from "../../infra/di/inversify/inversify.types";
 
