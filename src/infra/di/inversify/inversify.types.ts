@@ -6,5 +6,6 @@ export const INVERIFY_IDENTIFIERS = {
     UserRepository: Symbol('UserRepository'),
     JWT: Symbol('JWT'),
     AuthService: Symbol('AuthService'),
-    PermissionService: Symbol('PermissionService')
+    PermissionService: Symbol('PermissionService'),
+    TypeORMDataSource: Symbol('TypeORMDataSource')
 }

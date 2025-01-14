@@ -24,7 +24,7 @@ export class AuthService {
       if (userRes.success) {
         const res = await this.userRepository.create(user);
         if (res.success) {
-          return {success: true, value: user.id};
+          return {success: true, value: user.id ?? "No Id Generated"};
         } else {
           return {success: false, error: res.error};
         }
