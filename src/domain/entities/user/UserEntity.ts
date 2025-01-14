@@ -23,8 +23,8 @@ export class UserEntity implements User {
         this.updatedBy = this.id;
     }
 
-    public static create(email: string, password: string, userMetadata: UserMetadata): CommandResult<UserEntity> {
-        const userEntity = new UserEntity(email, password, userMetadata);
+    public static create(user: User): CommandResult<UserEntity> {
+        const userEntity = new UserEntity(user.email, user.password, user.userMetadata);
         const validation = UserMetadataSchema.safeParse(userEntity.serialize());
         if (validation.success) {
             return {success: true, value: userEntity};

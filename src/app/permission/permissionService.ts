@@ -1,19 +1,23 @@
-import { Permission } from "../../domain/entities/permission/Permisson";
+import type { Permission } from "../../domain/entities/permission/Permisson";
+import { PermissionEntity } from "../../domain/entities/permission/PermissionEntity";
 import type { PermissionRepository } from "../../domain/entities/permission/port/PermissionRepository";
 import { injectable, inject } from "inversify";
 import { INVERIFY_IDENTIFIERS } from "../../infra/di/inversify/inversify.types";
 import { PermissionType } from "../../shared/enums/PermissionType";
-import type { CommandResult } from "../../shared/types";
+import type { CommandResult, UUID } from "../../shared/types";
 
 @injectable()
 export class PermissionService {
     constructor(@inject(INVERIFY_IDENTIFIERS.PermissionService) private permissionRepository: PermissionRepository) {}
 
-    public async grantPermission(creatorId: string, userId: string, documentId: string, permissionType: PermissionType): Promise<CommandResult<string>> {
-        const permission = new Permission(userId, creatorId, documentId, permissionType, new Date());
-        const res = await this.permissionRepository.grantPermission(permission);
+    public async grantPermission(creatorId: UUID, userId: UUID, documentId: UUID, permissionType: PermissionType): Promise<CommandResult<string>> {
+        const res = PermissionEntity.create(userId, creatorId, documentId, permissionType)
         if (res.success) {
-            return {success: true, value: res.value};
+            const permission = await this.permissionRepository.grantPermission(res.value.serialize());
+            if (permission.success) {
+                return {success: true, value: permission.value};
+            }
+            return {success: false, error: permission.error};
         }
         return {success: false, error: res.error};
     }
@@ -27,7 +31,7 @@ export class PermissionService {
             }
             return {success: false, error: res.error};
         }
-        return {success: false, error: "Either permission does not exist or access denied"};
+        return {success: false, error: Error("Either permission does not exist or access denied")};
     }
 
     public async hasPermission(requestorId: string, userId: string, documentId: string, permissionType: PermissionType): Promise<Permission | null> {

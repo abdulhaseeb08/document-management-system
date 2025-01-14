@@ -1,4 +1,3 @@
-import type { CommandResult } from "../../shared/types";
 import { Table } from "typeorm";
 
 export interface DatabaseManager {
