@@ -4,7 +4,7 @@ import {
     PrimaryColumn,
     Column,
     CreateDateColumn,
-    OneToMany
+    ManyToOne
 }
 from "typeorm";
 import { PermissionType } from "../../../../shared/enums/PermissionType";
@@ -18,15 +18,14 @@ export class PermissionModel {
     @PrimaryColumn({type: "varchar", length: 36, nullable: false})
     id: string
 
-    @OneToMany(() => UserModel, (user) => user.id)
-    creatorId: string
+    @ManyToOne(() => UserModel, (user) => user.permissions)
+    creator: string
 
-    @OneToMany(() => UserModel, (user) => user.id)
-    @Column({type: "varchar", length: 36, nullable: false})
-    userId: string
+    @ManyToOne(() => UserModel, (user) => user.permissions)
+    user: string
 
-    @OneToMany(() => DocumentModel, (document) => document.id)
-    documentId: string 
+    @ManyToOne(() => DocumentModel, (document) => document.permissions)
+    document: string 
 
     @Column({type: "enum", enum: PermissionType, nullable: false})
     permissionType: PermissionType

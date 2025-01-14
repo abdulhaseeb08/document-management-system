@@ -11,6 +11,7 @@ import {
 }
 from "typeorm"
 import { UserModel } from "./UserModel"
+import { PermissionModel } from "./PermissionModel"
 
 @Entity()
 export class DocumentModel {
@@ -18,7 +19,7 @@ export class DocumentModel {
     id: string
 
     @ManyToOne(() => UserModel, (user) => user.documents)
-    creator: UserModel 
+    creator: string 
 
     @Column({type: "varchar", length: 100, nullable: false})
     name: string
@@ -35,6 +36,9 @@ export class DocumentModel {
     @UpdateDateColumn()
     updatedAt: Date
 
-    @Column({type: "varchar", length: 36, nullable: false})
+    @ManyToOne(() => UserModel, (user) => user.documents)
     updatedBy: string
+
+    @OneToMany(() => PermissionModel, (permission) => permission.id)
+    permissions: PermissionModel[]
 }

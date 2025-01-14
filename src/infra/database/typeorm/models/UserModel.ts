@@ -9,6 +9,7 @@ import {
 from "typeorm";
 import { UserRole } from "../../../../shared/enums/UserRole"
 import { DocumentModel } from "./DocumentModel";
+import { PermissionModel } from "./PermissionModel";
 
 @Entity()
 export class UserModel {
@@ -38,4 +39,7 @@ export class UserModel {
 
     @OneToMany(() => DocumentModel, (document) => document.id)
     documents: DocumentModel[]
+
+    @OneToMany(() => PermissionModel, (permission) => permission.id)
+    permissions: PermissionModel[]
 }

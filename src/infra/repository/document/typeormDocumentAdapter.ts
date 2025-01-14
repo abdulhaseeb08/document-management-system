@@ -1,20 +1,20 @@
 import type { DocumentRepository } from "../../../domain/entities/document/port/DocumentRepository";
-import { Document } from "../../../domain/entities/document/DocumentEntity";
-import { DocumentEntity } from "../../database/typeorm/entities/DocumentEntity";
+import type { Document } from "../../../domain/entities/document/Document";
+import { DocumentModel } from "../../database/typeorm/models/DocumentModel";
 import { Repository} from "typeorm";
 import { DataSource } from 'typeorm';
-import type { CommandResult } from "../../../shared/types";
-import type { DocumentMetadata } from "../../../domain/entities/document/Document";
+import type { CommandResult, UUID } from "../../../shared/types";
+import type { DocumentMetadata } from "../../../domain/valueObjects/DocumentMetadata";
 import { injectable } from "inversify";
 
 @injectable()
 export class TypeORMDocumnetRepository implements DocumentRepository {
-    private repository: Repository<DocumentEntity>;
+    private repository: Repository<DocumentModel>;
     public dataSource: DataSource;
 
     constructor(dataSource: DataSource) {
         this.dataSource = dataSource;
-        this.repository = dataSource.getRepository(DocumentEntity);
+        this.repository = dataSource.getRepository(DocumentModel);
     }
 
     public async create(document: Document): Promise<CommandResult<string>> {
@@ -48,7 +48,7 @@ export class TypeORMDocumnetRepository implements DocumentRepository {
                 const res = await this.repository.delete(id);
                 return { success: true, value: `Rows affected: ${res.affected}`};
             }
-            return { success: false, error: `Document does not exist`};
+            return { success: false, error: Error(`Document does not exist`)};
         } catch (err) {
             return { success: false, error: err as Error };
         }
@@ -62,15 +62,9 @@ export class TypeORMDocumnetRepository implements DocumentRepository {
         if (metadata.tags) {
             query.andWhere("document.tags ?| :tags", { tags: metadata.tags });
         }
-        if (metadata.createdAt) {
-            query.andWhere("DATE(document.createdAt) = :createdAt", { createdAt: metadata.createdAt.toISOString().split('T')[0] });
-        }
         if (metadata.updatedAt) {
             query.andWhere("DATE(document.updatedAt) = :updatedAt", { updatedAt: metadata.updatedAt.toISOString().split('T')[0] });
           }
-        if (metadata.updatedBy) {
-            query.andWhere("document.updatedBy = :updatedBy", { updatedBy: metadata.updatedBy });
-        }
         if (metadata.documentFormat) {
             query.andWhere("document.documentFormat = :documentFormat", { documentFormat: metadata.documentFormat });
         }
@@ -78,48 +72,49 @@ export class TypeORMDocumnetRepository implements DocumentRepository {
         return res ? this.toDomain(res) : null;
     }
 
-    private toEntity(document: Document): DocumentEntity {
-        const entity = new DocumentEntity();
+    private toEntity(document: Document): DocumentModel {
+        const entity = new DocumentModel();
         entity.id = document.id;
-        entity.name = document.name;
-        entity.tags = document.tags;
+        entity.name = document.documentMetadata.name;
+        entity.tags = document.documentMetadata.tags;
         entity.createdAt = document.createdAt;
-        entity.creatorId = document.creatorId;
-        entity.updatedAt = document.updatedAt;
+        entity.id = document.creatorId;
+        entity.updatedAt = document.documentMetadata.updatedAt;
         entity.updatedBy = document.updatedBy;
-        entity.documentFormat = document.documentFormat;
+        entity.creator = document.creatorId;
+        entity.documentFormat = document.documentMetadata.documentFormat;
         return entity;
     }
 
-    private toDomain(entity: DocumentEntity): Document;
-    private toDomain(entity: DocumentEntity[]): Document[];
-    private toDomain(entity: DocumentEntity | DocumentEntity[]): Document | Document[] {
+    private toDomain(entity: DocumentModel): Document;
+    private toDomain(entity: DocumentModel[]): Document[];
+    private toDomain(entity: DocumentModel | DocumentModel[]): Document | Document[] {
         if (Array.isArray(entity)) {
-            return entity.map(singleEntity => new Document(
-                singleEntity.creatorId,
-                {
+            return entity.map(singleEntity => ({
+                id: singleEntity.id as UUID,
+                creatorId: singleEntity.creator as UUID,
+                createdAt: singleEntity.createdAt,
+                updatedBy: singleEntity.updatedBy as UUID,
+                documentMetadata: {
                     name: singleEntity.name,
                     tags: singleEntity.tags,
-                    createdAt: singleEntity.createdAt,
                     updatedAt: singleEntity.updatedAt,
-                    updatedBy: singleEntity.updatedBy,
                     documentFormat: singleEntity.documentFormat
-                },
-                singleEntity.id
-            ));
+                }
+            }));
         }
     
-        return new Document(
-            entity.creatorId,
-            {
+        return {
+            id: entity.id as UUID,
+            creatorId: entity.creator as UUID,
+            createdAt: entity.createdAt,
+            updatedBy: entity.updatedBy as UUID,
+            documentMetadata: {
                 name: entity.name,
                 tags: entity.tags,
-                createdAt: entity.createdAt,
                 updatedAt: entity.updatedAt,
-                updatedBy: entity.updatedBy,
                 documentFormat: entity.documentFormat
-            },
-            entity.id
-        );
+            }
+        };
     }
 }

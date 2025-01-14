@@ -1,19 +1,19 @@
 import type { PermissionRepository } from "../../../domain/entities/permission/port/PermissionRepository";
-import { PermissionEntity } from "../../database/typeorm/entities/PermissionEntity";
-import { Permission } from "../../../domain/entities/permission/Permisson";
+import { PermissionModel } from "../../database/typeorm/models/PermissionModel";
+import type { Permission } from "../../../domain/entities/permission/Permisson";
 import { Repository} from "typeorm";
 import { DataSource } from 'typeorm';
-import type { CommandResult } from "../../../shared/types";
+import type { CommandResult, UUID } from "../../../shared/types";
 import { injectable } from "inversify";
 
 @injectable()
 export class TypeORMPermissionRepository implements PermissionRepository {
-    private repository: Repository<PermissionEntity>;
+    private repository: Repository<PermissionModel>;
     public dataSource: DataSource;
 
     constructor(dataSource: DataSource) {
         this.dataSource = dataSource;
-        this.repository = dataSource.getRepository(PermissionEntity);
+        this.repository = dataSource.getRepository(PermissionModel);
     }
 
     public async grantPermission(permission: Permission): Promise<CommandResult<string>> {
@@ -27,7 +27,7 @@ export class TypeORMPermissionRepository implements PermissionRepository {
     }
 
     public async getPermissions(userId: string): Promise<Permission[] | null> {
-        const entity = await this.repository.find({where: {userId: userId}});
+        const entity = await this.repository.find({where: {user: userId}});
         return entity ? this.toDomain(entity) : null;
     }
 
@@ -43,38 +43,38 @@ export class TypeORMPermissionRepository implements PermissionRepository {
         }
     }
 
-    private toEntity(permission: Permission): PermissionEntity {
-        const entity = new PermissionEntity();
+    private toEntity(permission: Permission): PermissionModel {
+        const entity = new PermissionModel();
         entity.id = permission.id;
-        entity.creatorId = permission.creatorId;
-        entity.userId = permission.userId;
-        entity.documentId = permission.documentId;
-        entity.permissionType = permission.permissionType;
+        entity.user = permission.userId;
+        entity.creator = permission.creatorId;
+        entity.document = permission.documentId;
         entity.createdAt = permission.createdAt;
+        entity.permissionType = permission.permissionType;
         return entity;
     }
 
-    private toDomain(entity: PermissionEntity): Permission;
-    private toDomain(entity: PermissionEntity[]): Permission[];
-    private toDomain(entity: PermissionEntity | PermissionEntity[]): Permission | Permission[] {
+    private toDomain(entity: PermissionModel): Permission;
+    private toDomain(entity: PermissionModel[]): Permission[];
+    private toDomain(entity: PermissionModel | PermissionModel[]): Permission | Permission[] {
         if (Array.isArray(entity)) {
-            return entity.map(singleEntity => new Permission(
-                singleEntity.userId,
-                singleEntity.creatorId,
-                singleEntity.documentId,
-                singleEntity.permissionType,
-                singleEntity.createdAt,
-                singleEntity.id
-            ));
+            return entity.map(singleEntity => ({
+                id: singleEntity.id as UUID,
+                userId: singleEntity.user as UUID,
+                creatorId: singleEntity.creator as UUID,
+                documentId: singleEntity.document as UUID,
+                createdAt: singleEntity.createdAt,
+                permissionType: singleEntity.permissionType
+            }));
         }
     
-        return new Permission(
-            entity.userId,
-            entity.creatorId,
-            entity.documentId,
-            entity.permissionType,
-            entity.createdAt,
-            entity.id
-        );
+        return {
+            id: entity.id as UUID,
+            userId: entity.user as UUID,
+            creatorId: entity.creator as UUID,
+            documentId: entity.document as UUID,
+            createdAt: entity.createdAt,
+            permissionType: entity.permissionType
+        };
     }
 }
