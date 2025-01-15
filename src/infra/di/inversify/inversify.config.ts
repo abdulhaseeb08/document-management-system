@@ -12,6 +12,8 @@ import { UserController } from "../../../presentation/controllers/userController
 import { INVERIFY_IDENTIFIERS } from "./inversify.types";
 import type { UserRepository } from "../../../domain/entities/user/port/UserRepository";
 import { TypeORMUserRepository } from "../../repository/user/typeormUserAdapter";
+import type { Logger } from "../../../app/ports/logger/logger";
+import { PinoLogger } from "../../logger/pinoLogger";
 import AppDataSource from "../../database/typeorm/dataSource";
 import { DataSource } from "typeorm";
 
@@ -23,6 +25,7 @@ container.bind<Hasher>(INVERIFY_IDENTIFIERS.Hasher).to(Argon2Adpater);
 container.bind<JWTAuth>(INVERIFY_IDENTIFIERS.JWT).to(JoseJWTAdapter);
 container.bind<UserRepository>(INVERIFY_IDENTIFIERS.UserRepository).to(TypeORMUserRepository);
 container.bind<DataSource>(INVERIFY_IDENTIFIERS.TypeORMDataSource).toConstantValue(AppDataSource);
+container.bind<Logger>(INVERIFY_IDENTIFIERS.Logger).toConstantValue(new PinoLogger());
 
 // Binding services to self
 container.bind<DocumentService>(DocumentService).toSelf();

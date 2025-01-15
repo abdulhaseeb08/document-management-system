@@ -28,9 +28,9 @@ export class TypeORMUserRepository implements UserRepository {
     public async create(user: User): Promise<CommandResult<string>> {
         try {
             const entity = this.toEntity(user);
-            this.createConnection();
+            await this.createConnection();
             await this.repository.save(entity);
-            this.closeConnection();
+            await this.closeConnection();
             return { success: true, value: entity.id };
         } catch (err) {
             return { success: false, error: err as Error };

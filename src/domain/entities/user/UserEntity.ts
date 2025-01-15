@@ -18,14 +18,18 @@ export class UserEntity implements User {
         this.id = crypto.randomUUID() as UUID;
         this.email = email;
         this.password = password;
-        this.userMetadata = userMetadata;
+        this.userMetadata = {
+            name: userMetadata.name,
+            updatedAt: new Date(),
+            userRole: userMetadata.userRole,
+          };
         this.createdAt = new Date();
         this.updatedBy = this.id;
     }
 
     public static create(user: User): CommandResult<UserEntity> {
         const userEntity = new UserEntity(user.email, user.password, user.userMetadata);
-        const validation = UserMetadataSchema.safeParse(userEntity.serialize());
+        const validation = UserSchema.safeParse(userEntity.serialize());
         if (validation.success) {
             return {success: true, value: userEntity};
         }
@@ -116,7 +120,7 @@ export class UserEntity implements User {
         return this.userMetadata.userRole;
     }
 
-    serialize(): User {
+    public serialize(): User {
         return {
            id: this.id,
            email: this.email,

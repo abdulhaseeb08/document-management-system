@@ -2,11 +2,15 @@ import { AuthService } from "../../app/services/auth/AuthService";
 import { inject, injectable } from "inversify";
 import  type { User } from "../../domain/entities/user/User";
 import { UserRole } from "../../shared/enums/UserRole";
+import type { Logger } from "../../app/ports/logger/logger";
+import { INVERIFY_IDENTIFIERS } from "../../infra/di/inversify/inversify.types";
 
 @injectable()
 export class UserController {
 
-    constructor(@inject(AuthService) private authService: AuthService) {}
+    constructor(@inject(AuthService) private authService: AuthService,
+                @inject(INVERIFY_IDENTIFIERS.Logger) private logger: Logger
+            ) {}
 
     async parseRequestBody(request: Request): Promise<any | null>  {
         try {
@@ -26,7 +30,7 @@ export class UserController {
             email: body.email,
             password: body.password,
             userMetadata: {
-                name: body.name,
+                name: body.userMetadata.name,
                 updatedAt: new Date(),
                 userRole: UserRole.USER
             }

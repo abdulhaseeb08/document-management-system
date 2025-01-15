@@ -1,19 +1,18 @@
 import argon2 from "argon2";
-import type { Hasher } from "../../app/services/hasher/port/Hasher";
+import type { Hasher } from "../../app/ports/hasher/Hasher";
 import type { CommandResult } from "../../shared/types";
-import { injectable } from "inversify";
+import { inject, injectable } from "inversify";
+import { INVERIFY_IDENTIFIERS } from "../di/inversify/inversify.types";
+import type { Logger } from "../../app/ports/logger/logger";
 
 @injectable()
 export class Argon2Adpater implements Hasher {
+
+    constructor(@inject(INVERIFY_IDENTIFIERS.Logger) private logger: Logger) {}
     
     public async hash(password: string): Promise<CommandResult<string>> {
         try {
-            const hashedPassword = await argon2.hash(password, {
-                type: argon2.argon2id,
-                memoryCost: 19,
-                timeCost: 2,
-                parallelism: 1,
-            });
+            const hashedPassword = await argon2.hash(password);
             return {success: true, value: hashedPassword};
         } catch (err) {
             return {success: false, error: err  as Error};

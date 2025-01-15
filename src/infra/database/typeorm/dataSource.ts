@@ -23,7 +23,7 @@ const AppDataSource = new DataSource({
     username: 'august_black', // Replace with your PostgreSQL username
     password: 'august_black', // Replace with your PostgreSQL password
     database: 'postgres',    // Replace with your database name
-    entities: [DocumentModel, UserModel, PermissionModel],
+    entities: [UserModel, DocumentModel, PermissionModel],
     synchronize: true, // Auto-create database tables (development only)
 });
 

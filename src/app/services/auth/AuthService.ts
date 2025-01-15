@@ -7,13 +7,15 @@ import { injectable, inject } from "inversify";
 import { INVERIFY_IDENTIFIERS } from "../../../infra/di/inversify/inversify.types";
 import { JoseJWTAdapter } from "../../../infra/jwt/joseAdapter";
 import type { CommandResult } from "../../../shared/types";
+import type { Logger } from "../../ports/logger/logger";
 
 @injectable()
 export class AuthService {
   constructor(
     @inject(INVERIFY_IDENTIFIERS.UserRepository) private userRepository: UserRepository,
     @inject(INVERIFY_IDENTIFIERS.Hasher) private hasher: Hasher,
-    @inject(INVERIFY_IDENTIFIERS.JWT) private jwtAdapter: JoseJWTAdapter
+    @inject(INVERIFY_IDENTIFIERS.JWT) private jwtAdapter: JoseJWTAdapter,
+    @inject(INVERIFY_IDENTIFIERS.Logger) private logger: Logger
   ) {}
 
   public async registerUser(user: User): Promise<CommandResult<string>> {
@@ -22,7 +24,7 @@ export class AuthService {
       user.password = hashedPassword.value;
       const userRes = UserEntity.create(user);
       if (userRes.success) {
-        const res = await this.userRepository.create(user);
+        const res = await this.userRepository.create(userRes.value.serialize());
         if (res.success) {
           return {success: true, value: user.id ?? "No Id Generated"};
         } else {
@@ -30,7 +32,6 @@ export class AuthService {
         }
       }
       return {success: false, error: userRes.error};
-
     } else {
       return {success: false, error: hashedPassword.error};
     }
