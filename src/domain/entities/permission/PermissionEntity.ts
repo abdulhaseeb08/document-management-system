@@ -1,5 +1,5 @@
 import type { UUID } from "../../../shared/types";
-import { PermissionSchema } from "../../schema/PermissionSchema";
+import { PermissionSchema } from "../../../app/schema/PermissionSchema";
 import type { CommandResult } from "../../../shared/types";
 import type { Permission } from "./Permisson";
 import { PermissionType } from "../../../shared/enums/PermissionType";

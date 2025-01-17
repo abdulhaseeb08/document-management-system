@@ -1,10 +1,10 @@
 import type { UUID } from "../../../shared/types";
-import { UserMetadataSchema } from "../../schema/UserSchema";
-import { UserSchema } from "../../schema/UserSchema";
 import type { CommandResult } from "../../../shared/types";
 import type { UserMetadata } from "../../valueObjects/UserMetadata";
 import type { User } from "./User";
 import type { UserRole } from "../../../shared/enums/UserRole";
+import { Result } from "joji-ct-fp";
+import { DomainValidationError } from "../../errors/DomainValidationErrors";
 
 export class UserEntity implements User {
     readonly id: UUID;
@@ -27,25 +27,25 @@ export class UserEntity implements User {
         this.updatedBy = this.id;
     }
 
-    public static create(user: User): CommandResult<UserEntity> {
+    public static create(user: User): Result<UserEntity, Error> {
         const userEntity = new UserEntity(user.email, user.password, user.userMetadata);
         const validation = UserSchema.safeParse(userEntity.serialize());
-        if (validation.success) {
-            return {success: true, value: userEntity};
+        if (!validation.success) {
+            return Result.Err(new ZodValidationError(validation.error));
         }
-        return {success: false, error: Error(validation.error.message)};
+        return Result.Ok(userEntity);
     }
 
-    public setEmail(userId: UUID, email: string): CommandResult<string> {
+    public setEmail(userId: UUID, email: string): Result<string, Error> {
         const emailValidation = UserSchema.shape.email.safeParse(email);
         const userIdValidation = UserSchema.shape.updatedBy.safeParse(userId);
         if (emailValidation.success && userIdValidation.success) {
             this.email = email;
             this.userMetadata.updatedAt = new Date();
             this.updatedBy = userId;
-            return {success: true, value: "updated"};
+            return Result.Ok("updated");
         }
-        return {success: false, error: Error(emailValidation.error?.message || userIdValidation.error?.message)};
+        return Result.Err( new ZodValidationError(emailValidation.error || userIdValidation.error!));
     }
 
     public setPassword(userId: UUID, password: string): CommandResult<string> {

@@ -1,7 +1,8 @@
 import { Table } from "typeorm";
+import { Result } from "joji-ct-fp";
 
 export interface DatabaseManager {
-    query(query: string, parameters?: any[]): Promise<Array<Record<string, unknown>> | null>;
-    createSchema(schemaName: string): Promise<boolean>;
-    createTable(table: Table): Promise<boolean>;
+    query(query: string, parameters?: any[]): Promise<Result<Array<Record<string, unknown>>, Error>>;
+    createSchema(schemaName: string): Promise<Result<boolean, Error>>;
+    createTable(table: Table): Promise<Result<boolean, Error>>;
 }

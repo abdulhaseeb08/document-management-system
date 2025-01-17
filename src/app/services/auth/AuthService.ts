@@ -8,6 +8,10 @@ import { INVERIFY_IDENTIFIERS } from "../../../infra/di/inversify/inversify.type
 import { JoseJWTAdapter } from "../../../infra/jwt/joseAdapter";
 import type { CommandResult } from "../../../shared/types";
 import type { Logger } from "../../ports/logger/logger";
+import { UserDto } from "../../dtos/UserDtos";
+import type { UserDtoType } from "../../dtos/UserDtos";
+import { Result } from "joji-ct-fp";
+import { ZodValidationError } from "../../errors/ZodValidationErrors";
 
 @injectable()
 export class AuthService {
@@ -18,23 +22,35 @@ export class AuthService {
     @inject(INVERIFY_IDENTIFIERS.Logger) private logger: Logger
   ) {}
 
-  public async registerUser(user: User): Promise<CommandResult<string>> {
-    const hashedPassword = await this.hasher.hash(user.password);
-    if (hashedPassword.success) {
-      user.password = hashedPassword.value;
-      const userRes = UserEntity.create(user);
-      if (userRes.success) {
-        const res = await this.userRepository.create(userRes.value.serialize());
-        if (res.success) {
-          return {success: true, value: user.id ?? "No Id Generated"};
-        } else {
-          return {success: false, error: res.error};
-        }
-      }
-      return {success: false, error: userRes.error};
-    } else {
-      return {success: false, error: hashedPassword.error};
+  public async registerUser(userDto: UserDtoType): Promise<Result<User, Error>> {
+    const res = UserDto.safeParse(userDto);
+    if (!res.success) {
+      return Result.Err(new ZodValidationError(res.error));
     }
+    const hashedPassword = (await this.hasher.hash(userDto.password))
+      .flatMap((securePassword) => {
+        userDto.password = securePassword;
+        const userRes = UserEntity.create(userDto);
+        if (userRes.success) {
+          return Result.Ok(userRes.value);
+        }
+        return Result.Err(userRes.error);
+      });
+    // if (hashedPassword.success) {
+    //   userDto.password = hashedPassword.value;
+    //   const userRes = UserEntity.create(user);
+    //   if (userRes.success) {
+    //     const res = await this.userRepository.create(userRes.value.serialize());
+    //     if (res.success) {
+    //       return {success: true, value: user.id ?? "No Id Generated"};
+    //     } else {
+    //       return {success: false, error: res.error};
+    //     }
+    //   }
+    //   return {success: false, error: userRes.error};
+    // } else {
+    //   return {success: false, error: hashedPassword.error};
+    // }
   }
 
   public async login(user: User): Promise<CommandResult<string>> {

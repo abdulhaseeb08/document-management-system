@@ -1,11 +1,11 @@
 import type { Document } from "../Document";
 import type { DocumentMetadata } from "../../../valueObjects/DocumentMetadata";
-import type { CommandResult } from "../../../../shared/types";
+import {Result} from "joji-ct-fp";
 
 export interface DocumentRepository {
-    create(document: Document): Promise<CommandResult<string>>;
-    update(document: Document): Promise<CommandResult<string>>;
-    get(id: string): Promise<Document | null>;
-    delete(id: string): Promise<CommandResult<string>>;
-    search(metadata: DocumentMetadata): Promise<Document[] | null>;
+    create(document: Document): Promise<Result<string, Error>>;
+    update(document: Document): Promise<Result<string, Error>>;
+    get(id: string): Promise<Result<Document, Error>>;
+    delete(id: string): Promise<Result<string, Error>>;
+    search(metadata: DocumentMetadata): Promise<Result<Document[], Error>>;
 }

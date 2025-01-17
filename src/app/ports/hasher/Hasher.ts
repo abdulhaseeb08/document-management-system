@@ -1,6 +1,6 @@
-import type { CommandResult } from "../../../shared/types"
+import { Result } from "joji-ct-fp";
 
 export interface Hasher {
-    hash(password: string): Promise<CommandResult<string>>;
-    compare(password: string, hashedPassword: string): Promise<boolean>;
+    hash(password: string): Promise<Result<string, Error>>;
+    compare(password: string, hashedPassword: string): Promise<Result<boolean, Error>>;
 }

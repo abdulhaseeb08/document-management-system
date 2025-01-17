@@ -4,6 +4,7 @@ import type { CommandResult } from "../../shared/types";
 import { KeyObject} from 'crypto';
 import { SignJWT, jwtVerify } from "jose";
 import { injectable } from "inversify";
+import { Result } from "joji-ct-fp";
 
 @injectable()
 export class JoseJWTAdapter implements JWTAuth {
@@ -21,12 +22,12 @@ export class JoseJWTAdapter implements JWTAuth {
         }
     }
 
-    public async verify(token: string, secret: KeyObject): Promise<CommandResult<JWTPayload>> {
+    public async verify(token: string, secret: KeyObject): Promise<Result<JWTPayload, Error>> {
         try {
             const { payload } = await jwtVerify(token, secret);
-            return {success: true, value: payload};
+            return Result.Ok(payload);
         } catch (err) {
-            return {success: false, error: err as Error};
+            return Result.Err(Error('Opppsie'));
         }
     }
 }
