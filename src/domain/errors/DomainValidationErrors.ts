@@ -46,3 +46,10 @@ export class InvalidEnumValueError extends DomainValidationError {
         this.name = "InvalidEnumValueError";
     }
 }
+
+export class InvalidEmailError extends DomainValidationError {
+    constructor() {
+        super("Invalid email");
+        this.name = "InvalidEmailError";
+    }
+}
