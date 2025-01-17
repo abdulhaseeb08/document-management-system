@@ -6,12 +6,9 @@ import type { Hasher } from "../../ports/hasher/Hasher";
 import { injectable, inject } from "inversify";
 import { INVERIFY_IDENTIFIERS } from "../../../infra/di/inversify/inversify.types";
 import { JoseJWTAdapter } from "../../../infra/jwt/joseAdapter";
-import type { CommandResult } from "../../../shared/types";
 import type { Logger } from "../../ports/logger/logger";
-import { UserDto } from "../../dtos/UserDtos";
-import type { UserDtoType } from "../../dtos/UserDtos";
-import { Result } from "joji-ct-fp";
-import { ZodValidationError } from "../../errors/ZodValidationErrors";
+import type { UserRegisterDtoType } from "../../dtos/UserDtos";
+import { Result, matchRes } from "joji-ct-fp";
 
 @injectable()
 export class AuthService {
@@ -22,55 +19,43 @@ export class AuthService {
     @inject(INVERIFY_IDENTIFIERS.Logger) private logger: Logger
   ) {}
 
-  public async registerUser(userDto: UserDtoType): Promise<Result<User, Error>> {
-    const res = UserDto.safeParse(userDto);
-    if (!res.success) {
-      return Result.Err(new ZodValidationError(res.error));
-    }
-    const hashedPassword = (await this.hasher.hash(userDto.password))
-      .flatMap((securePassword) => {
-        userDto.password = securePassword;
-        const userRes = UserEntity.create(userDto);
-        if (userRes.success) {
-          return Result.Ok(userRes.value);
-        }
-        return Result.Err(userRes.error);
-      });
-    // if (hashedPassword.success) {
-    //   userDto.password = hashedPassword.value;
-    //   const userRes = UserEntity.create(user);
-    //   if (userRes.success) {
-    //     const res = await this.userRepository.create(userRes.value.serialize());
-    //     if (res.success) {
-    //       return {success: true, value: user.id ?? "No Id Generated"};
-    //     } else {
-    //       return {success: false, error: res.error};
-    //     }
-    //   }
-    //   return {success: false, error: userRes.error};
-    // } else {
-    //   return {success: false, error: hashedPassword.error};
-    // }
+  public async registerUser(userRegisterDto: UserRegisterDtoType): Promise<Result<User, Error>> {
+
+    const res = await (await this.userRepository.get(userRegisterDto.email))
+      .flatMap(async () => (await this.hasher.hash(userRegisterDto.password))
+        .flatMap((securePassword) => {
+          userRegisterDto.password = securePassword;
+          return UserEntity.create(userRegisterDto.email, userRegisterDto.password, userRegisterDto.name, userRegisterDto.userRole)
+            .flatMap(
+              async (userEntity) => (await this.userRepository.create(userEntity.serialize()))
+            )
+        })
+      );
+
+      return matchRes(res, {
+        Ok: (res) => Result.Ok(res),
+        Err: (err) => Result.Err(err)
+      })
+
   }
 
-  public async login(user: User): Promise<CommandResult<string>> {
-    const res = await this.userRepository.get(user.email);
-    if (!res) {
-      return {success: false, error: Error("No user with given email found")};
-    }
+  public async login(user: User): Promise<Result<string, Error>> {
 
-    const validPassword = await this.hasher.compare(user.password, user.password);
-    if (!validPassword) {
-      return {success: false, error: Error("Incorrect password")};
-    }
+    const res = await (await this.userRepository.get(user.email))
+      .flatMap(async () => (await this.hasher.compare(user.password, user.password))
+        .flatMap(() => Result.Ok(createSecretKey(new TextEncoder().encode(process.env.JWT_SECRET)))
+          .flatMap(async (secretKey) => (await this.jwtAdapter.sign(
+            { userId: user.id, role: user.userMetadata.userRole }, 
+            String(process.env.JWT_ALG), 
+            secretKey, 
+            String(process.env.JWT_EXP_TIME)))
+          )
+        )
+      );
 
-    const SECRET = createSecretKey(
-      new TextEncoder().encode(process.env.JWT_SECRET)
-    );
-    const token = await this.jwtAdapter.sign({ userId: user.id, role: user.userMetadata.userRole }, String(process.env.JWT_ALG) , SECRET, String(process.env.JWT_EXP_TIME));
-    if (token.success) {
-      return {success: true, value: token.value};
-    }
-    return {success: false, error: token.error};
+      return matchRes(res, {
+        Ok: (res) => Result.Ok(res),
+        Err: (err) => Result.Err(err)
+      })
   }
 }

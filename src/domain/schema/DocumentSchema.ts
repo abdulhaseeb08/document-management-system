@@ -33,7 +33,7 @@ export const validateDocumentMetadata = (data: DocumentMetadata): Result<boolean
     })
 };
 
-export const validateDocument = (data: Document): Result<boolean, string> => {
+export const validateDocument = (data: Document): Result<boolean, Error> => {
 
     const idResult = validateUUID(data.id)
         .flatMap(() => 
@@ -48,6 +48,6 @@ export const validateDocument = (data: Document): Result<boolean, string> => {
 
     return matchRes(idResult, {
         Ok: () => Result.Ok(true),
-        Err: (err) => Result.Err(err.name)
+        Err: (err) => Result.Err(err)
     })
 };

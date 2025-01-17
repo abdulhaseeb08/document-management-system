@@ -26,7 +26,7 @@ export const validateUserMetadata = (userMetadata: UserMetadata): Result<boolean
     })
 };
 
-export const validateUser = (user: User): Result<boolean, string> => {
+export const validateUser = (user: User): Result<boolean, Error> => {
 
     const res = validateUUID(user.id!)
         .flatMap(() => 
@@ -47,6 +47,6 @@ export const validateUser = (user: User): Result<boolean, string> => {
 
     return matchRes(res, {
         Ok: () => Result.Ok(true),
-        Err: (err) => Result.Err(err.name)
+        Err: (err) => Result.Err(err)
     })
 };

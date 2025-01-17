@@ -1,5 +1,5 @@
 import { ErrorCodes } from "../../shared/enums/ErrorCodes";
-import type { CustomErrorObj } from "./CustomErrorInterface";
+import type { CustomErrorObj } from "../../domain/errors/CustomErrorInterface";
 
 export class DatabaseError extends Error {
     private err: CustomErrorObj;

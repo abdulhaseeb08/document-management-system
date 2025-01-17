@@ -3,8 +3,9 @@ import type { CommandResult } from "../../../shared/types";
 import type { UserMetadata } from "../../valueObjects/UserMetadata";
 import type { User } from "./User";
 import type { UserRole } from "../../../shared/enums/UserRole";
-import { Result } from "joji-ct-fp";
-import { DomainValidationError } from "../../errors/DomainValidationErrors";
+import { Result, matchRes } from "joji-ct-fp";
+import { validateEmail, validateString, validateUUID } from "../../schema/Validatiors";
+import {validateUser} from "../../schema/UserSchema";
 
 export class UserEntity implements User {
     readonly id: UUID;
@@ -14,74 +15,93 @@ export class UserEntity implements User {
     updatedBy: UUID;
     userMetadata: UserMetadata;
 
-    private constructor(email: string, password: string, userMetadata: UserMetadata) {
+    private constructor(email: string, password: string, name: string, userRole: UserRole) {
         this.id = crypto.randomUUID() as UUID;
         this.email = email;
         this.password = password;
         this.userMetadata = {
-            name: userMetadata.name,
+            name: name,
             updatedAt: new Date(),
-            userRole: userMetadata.userRole,
+            userRole: userRole,
           };
         this.createdAt = new Date();
         this.updatedBy = this.id;
     }
 
-    public static create(user: User): Result<UserEntity, Error> {
-        const userEntity = new UserEntity(user.email, user.password, user.userMetadata);
-        const validation = UserSchema.safeParse(userEntity.serialize());
-        if (!validation.success) {
-            return Result.Err(new ZodValidationError(validation.error));
-        }
-        return Result.Ok(userEntity);
+    public static create(email: string, password: string, name: string, userRole: UserRole): Result<UserEntity, Error> {
+        const userEntity = new UserEntity(email, password, name, userRole);
+        const validation = validateUser(userEntity.serialize());
+        return matchRes(validation, {
+            Ok: () => Result.Ok(userEntity),
+            Err: (err) => Result.Err(err)
+        })
     }
 
     public setEmail(userId: UUID, email: string): Result<string, Error> {
-        const emailValidation = UserSchema.shape.email.safeParse(email);
-        const userIdValidation = UserSchema.shape.updatedBy.safeParse(userId);
-        if (emailValidation.success && userIdValidation.success) {
-            this.email = email;
-            this.userMetadata.updatedAt = new Date();
-            this.updatedBy = userId;
-            return Result.Ok("updated");
-        }
-        return Result.Err( new ZodValidationError(emailValidation.error || userIdValidation.error!));
+        const emailValidation = validateEmail(email);
+        const userIdValidation = validateUUID(userId);
+        return matchRes(emailValidation, {
+            Ok: () => matchRes(userIdValidation, {
+                Ok: () => {
+                    this.email = email;
+                    this.userMetadata.updatedAt = new Date();
+                    this.updatedBy = userId;
+                    return Result.Ok("updated");
+                },
+                Err: (err) => Result.Err(err)
+            }),
+            Err: (err) => Result.Err(err)
+        });
     }
 
-    public setPassword(userId: UUID, password: string): CommandResult<string> {
-        const passwordValidation = UserSchema.shape.password.safeParse(password);
-        const userIdValidation = UserSchema.shape.updatedBy.safeParse(userId);
-        if (passwordValidation.success && userIdValidation.success) {
-            this.password = password;
-            this.userMetadata.updatedAt = new Date();
-            this.updatedBy = userId;
-            return {success: true, value: "updated"};
-        }
-        return {success: false, error: Error(passwordValidation.error?.message || userIdValidation.error?.message)};
+    public setPassword(userId: UUID, password: string): Result<string, Error> {
+        const passwordValidation = validateString(password, 100);
+        const userIdValidation = validateUUID(userId);
+        
+        return matchRes(passwordValidation, {
+            Ok: () => matchRes(userIdValidation, {
+                Ok: () => {
+                    this.password = password;
+                    this.userMetadata.updatedAt = new Date();
+                    this.updatedBy = userId;
+                    return Result.Ok("updated");
+                },
+                Err: (err) => Result.Err(err)
+            }),
+            Err: (err) => Result.Err(err)
+        });
     }
 
-    public setUserName(userId: UUID, name: string): CommandResult<string> {
-        const nameValidation = UserMetadataSchema.shape.name.safeParse(name);
-        const userIdValidation = UserSchema.shape.updatedBy.safeParse(userId);
-        if (nameValidation.success && userIdValidation.success) {
-            this.userMetadata.name = name;
-            this.userMetadata.updatedAt = new Date();
-            this.updatedBy = userId;
-            return {success: true, value: "updated"};
-        }
-        return {success: false, error: Error(nameValidation.error?.message || userIdValidation.error?.message)};
+    public setUserName(userId: UUID, name: string): Result<string, Error> {
+        const nameValidation = validateString(name, 50);
+        const userIdValidation = validateUUID(userId);
+        
+        return matchRes(nameValidation, {
+            Ok: () => matchRes(userIdValidation, {
+                Ok: () => {
+                    this.userMetadata.name = name;
+                    this.userMetadata.updatedAt = new Date();
+                    this.updatedBy = userId;
+                    return Result.Ok("updated");
+                },
+                Err: (err) => Result.Err(err)
+            }),
+            Err: (err) => Result.Err(err)
+        });
     }
 
-    public setUserRole(userId: UUID, userRole: UserRole): CommandResult<string> {
-        const userRoleValidation = UserMetadataSchema.shape.userRole.safeParse(userRole);
-        const userIdValidation = UserSchema.shape.updatedBy.safeParse(userId);
-        if (userRoleValidation.success && userIdValidation.success) {
-            this.userMetadata.userRole = userRole;
-            this.userMetadata.updatedAt = new Date();
-            this.updatedBy = userId;
-            return {success: true, value: "updated"};
-        }
-        return {success: false, error: Error(userRoleValidation.error?.message || userIdValidation.error?.message)};
+    public setUserRole(userId: UUID, userRole: UserRole): Result<string, Error> {
+        const userIdValidation = validateUUID(userId);
+        
+        return matchRes(userIdValidation, {
+            Ok: () => {
+                this.userMetadata.userRole = userRole;
+                this.userMetadata.updatedAt = new Date();
+                this.updatedBy = userId;
+                return Result.Ok("updated");
+            },
+            Err: (err) => Result.Err(err)
+        });
     }
 
     public getId(): UUID {
@@ -101,7 +121,7 @@ export class UserEntity implements User {
     }
 
     public getLastUpdatedBy(): UUID {
-        return this.updatedBy
+        return this.updatedBy;
     }
 
     public getUserName(): string {

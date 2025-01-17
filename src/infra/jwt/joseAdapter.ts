@@ -9,16 +9,17 @@ import { Result } from "joji-ct-fp";
 @injectable()
 export class JoseJWTAdapter implements JWTAuth {
 
-    public async sign(payload:Record<string, unknown>, alg: string, secret: KeyObject, expTime: string): Promise<CommandResult<string>> {
+    public async sign(payload:Record<string, unknown>, alg: string, secret: KeyObject, expTime: string): Promise<Result<string, Error>> {
         try {
             const token = await new SignJWT(payload)
                             .setIssuedAt()
                             .setProtectedHeader({alg: `${alg}`})
                             .setExpirationTime(expTime)
                             .sign(secret)
-            return {success: true, value: token};
+            return Result.Ok(token);
+            
         } catch (err) {
-            return {success: false, error: err as Error};
+            return Result.Err(err as Error);
         }
     }
 
