@@ -4,26 +4,27 @@ import type { CommandResult } from "../../shared/types";
 import { inject, injectable } from "inversify";
 import { INVERIFY_IDENTIFIERS } from "../di/inversify/inversify.types";
 import type { Logger } from "../../app/ports/logger/logger";
+import { Result } from "joji-ct-fp";
 
 @injectable()
 export class Argon2Adpater implements Hasher {
 
     constructor(@inject(INVERIFY_IDENTIFIERS.Logger) private logger: Logger) {}
     
-    public async hash(password: string): Promise<CommandResult<string>> {
+    public async hash(password: string): Promise<Result<string, Error>> {
         try {
             const hashedPassword = await argon2.hash(password);
-            return {success: true, value: hashedPassword};
+            return Result.Ok(hashedPassword);
         } catch (err) {
-            return {success: false, error: err  as Error};
+            return Result.Err(err as Error);
         }
     }
 
-    public async compare(password: string, hashedPassword: string): Promise<boolean> {
+    public async compare(password: string, hashedPassword: string): Promise<Result<boolean, Error>> {
         try {
-            return await argon2.verify(hashedPassword, password);
+            return Result.Ok(await argon2.verify(hashedPassword, password));
         } catch (err) {
-            return false;
+            return Result.Err(err as Error);
         }
     }
 }

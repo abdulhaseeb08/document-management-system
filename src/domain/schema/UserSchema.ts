@@ -26,7 +26,7 @@ export const validateUserMetadata = (userMetadata: UserMetadata): Result<boolean
     })
 };
 
-export const validateUser = (user: User): Result<boolean, Error> => {
+export const validateUser = (user: User, password: string): Result<boolean, Error> => {
 
     const res = validateUUID(user.id!)
         .flatMap(() => 
@@ -34,7 +34,7 @@ export const validateUser = (user: User): Result<boolean, Error> => {
                 .flatMap(() => 
                     validateEmail(user.email)
                         .flatMap(() => 
-                            validateString(user.password, 100) // Assuming max length for password
+                            validateString(password, 100) // Assuming max length for password
                                 .flatMap(() => 
                                     validateUUID(user.updatedBy!)
                                         .flatMap(() => 

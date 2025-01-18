@@ -4,9 +4,10 @@ export const INVERIFY_IDENTIFIERS = {
     Hasher: Symbol('Hasher'),
     HasherService: Symbol('HasherService'),
     UserRepository: Symbol('UserRepository'),
+    UserService: Symbol('UserService'),
     JWT: Symbol('JWT'),
-    AuthService: Symbol('AuthService'),
     PermissionService: Symbol('PermissionService'),
     TypeORMDataSource: Symbol('TypeORMDataSource'),
-    Logger: Symbol('Logger')
+    Logger: Symbol('Logger'),
+    DatabaseManager: Symbol('DatabaseManager')
 }

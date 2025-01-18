@@ -12,6 +12,7 @@ import { Result, matchRes } from "joji-ct-fp";
 import { UserAlreadyExistsError } from "../../errors/UserErrors";
 import { UnauthorizedAccessError } from "../../errors/TokenErrors";
 import { UserRole } from "../../../shared/enums/UserRole";
+import type { DatabaseManager } from "../../ports/database/database";
 
 @injectable()
 export class UserService {
@@ -19,7 +20,8 @@ export class UserService {
     @inject(INVERIFY_IDENTIFIERS.UserRepository) private userRepository: UserRepository,
     @inject(INVERIFY_IDENTIFIERS.Hasher) private hasher: Hasher,
     @inject(INVERIFY_IDENTIFIERS.JWT) private jwtAdapter: JoseJWTAdapter,
-    @inject(INVERIFY_IDENTIFIERS.Logger) private logger: Logger
+    @inject(INVERIFY_IDENTIFIERS.Logger) private logger: Logger,
+    @inject(INVERIFY_IDENTIFIERS.DatabaseManager) private databaseManager: DatabaseManager
   ) {}
 
   public async registerUser(userRegisterDto: UserRegisterDtoType): Promise<Result<User, Error>> {
@@ -36,7 +38,7 @@ export class UserService {
           userRegisterDto.password = securePassword;
           return UserEntity.create(userRegisterDto.email, userRegisterDto.password, userRegisterDto.name, userRegisterDto.userRole)
             .flatMap(
-              async (userEntity) => (await this.userRepository.create(userEntity.serialize()))
+              async (userEntity) => (await this.userRepository.create(userEntity))
             )
         });
 
@@ -56,15 +58,16 @@ export class UserService {
     this.logger.info("User login attempt with email: " + userLoginDto.email);
 
     const res = await (await this.userRepository.get(userLoginDto.email))
-      .flatMap(async (user) => (await this.hasher.compare(userLoginDto.password, user.password))
-        .flatMap(async () => {
-          const secretKey = createSecretKey(new TextEncoder().encode(process.env.JWT_SECRET))
-          return await this.jwtAdapter.sign(
-            { userId: user.id, role: user.userMetadata.userRole }, 
-            String(process.env.JWT_ALG), 
-            secretKey, 
-            String(process.env.JWT_EXP_TIME))
-        }));
+      .flatMap(async (user) => (await this.databaseManager.query<string>("SELECT password FROM users WHERE id = $1", [user.id]))
+        .flatMap(async (safePassword) => (await this.hasher.compare(userLoginDto.password, safePassword[0].password))
+          .flatMap(async () => {
+            const secretKey = createSecretKey(new TextEncoder().encode(process.env.JWT_SECRET))
+            return await this.jwtAdapter.sign(
+              { userId: user.id, role: user.userMetadata.userRole }, 
+              String(process.env.JWT_ALG), 
+              secretKey, 
+              String(process.env.JWT_EXP_TIME))
+          })));
 
     return matchRes(res, {
       Ok: (res) => {
@@ -91,14 +94,17 @@ export class UserService {
         return Result.Ok(payload);
       }).flatMap(async () => (await this.userRepository.get(userUpdateDto.userId))
           .flatMap(async (user) => {
+            const res = await this.databaseManager.query<string>("SELECT password FROM users WHERE id = $1", [user.id]);
+            let safePassword = res.unwrap()[0].password;
             if (userUpdateDto.password) {
               const hashedPassword = await this.hasher.hash(userUpdateDto.password);
               if (hashedPassword.isErr()) {
                 this.logger.error("Error hashing password for user ID: " + userUpdateDto.userId);
                 return Result.Err(hashedPassword.unwrapErr());
               }
-              user.password = hashedPassword.unwrap();
+              safePassword = hashedPassword.unwrap();
             }
+
             if (userUpdateDto.email) {
               user.email = userUpdateDto.email;
             }
@@ -106,7 +112,10 @@ export class UserService {
             if (userUpdateDto.name) {
               user.userMetadata.name = userUpdateDto.name;
             }
-            return this.userRepository.update(user);
+            return UserEntity.create(user.email, safePassword, user.userMetadata.name, user.userMetadata.userRole)
+            .flatMap(
+              async (userEntity) => (await this.userRepository.create(userEntity))
+            )
           }
           )
         );

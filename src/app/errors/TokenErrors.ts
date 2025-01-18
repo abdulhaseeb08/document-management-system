@@ -7,8 +7,7 @@ export class AuthError extends Error {
     constructor(message: string, err: CustomErrorObj) {
         super(message);
         this.name = "AuthError";
-        this.err.code = err.code;
-        this.err.details = err.details;
+        this.err = {code: err.code, details: err.details};
         Object.setPrototypeOf(this, new.target.prototype);
     }
 }

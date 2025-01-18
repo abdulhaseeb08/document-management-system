@@ -1,5 +1,4 @@
 import type { UUID } from "../../../shared/types";
-import type { CommandResult } from "../../../shared/types";
 import type { UserMetadata } from "../../valueObjects/UserMetadata";
 import type { User } from "./User";
 import type { UserRole } from "../../../shared/enums/UserRole";
@@ -11,7 +10,7 @@ export class UserEntity implements User {
     readonly id: UUID;
     readonly createdAt: Date;
     email: string;
-    password: string;
+    private password: string;
     updatedBy: UUID;
     userMetadata: UserMetadata;
 
@@ -30,7 +29,7 @@ export class UserEntity implements User {
 
     public static create(email: string, password: string, name: string, userRole: UserRole): Result<UserEntity, Error> {
         const userEntity = new UserEntity(email, password, name, userRole);
-        const validation = validateUser(userEntity.serialize());
+        const validation = validateUser(userEntity.serialize(), password);
         return matchRes(validation, {
             Ok: () => Result.Ok(userEntity),
             Err: (err) => Result.Err(err)
@@ -144,7 +143,6 @@ export class UserEntity implements User {
         return {
            id: this.id,
            email: this.email,
-           password: this.password,
            createdAt: this.createdAt,
            userMetadata: this.userMetadata,
            updatedBy: this.updatedBy

@@ -3,9 +3,12 @@ import { UserModel } from "../../database/typeorm/models/UserModel";
 import type { User } from "../../../domain/entities/user/User";
 import { Repository} from "typeorm";
 import { DataSource } from 'typeorm';
-import type { CommandResult, UUID } from "../../../shared/types";
+import type { UUID } from "../../../shared/types";
+import { UserEntity } from "../../../domain/entities/user/UserEntity";
 import { injectable, inject } from "inversify";
+import { matchRes, Result } from "joji-ct-fp";
 import { INVERIFY_IDENTIFIERS } from "../../di/inversify/inversify.types";
+import { UserDoesNotExistError } from "../../../app/errors/UserErrors";
 
 @injectable()
 export class TypeORMUserRepository implements UserRepository {
@@ -25,56 +28,50 @@ export class TypeORMUserRepository implements UserRepository {
         await this.dataSource.destroy();
     }
 
-    public async create(user: User): Promise<CommandResult<string>> {
-        try {
-            const entity = this.toEntity(user);
-            await this.createConnection();
-            await this.repository.save(entity);
+    public async create(user: UserEntity): Promise<Result<User, Error>> {
+        const entity = this.toEntity(user);
+        await this.createConnection();
+        await this.repository.save(entity);
+        await this.closeConnection();
+        return Result.Ok(this.toDomain(entity));
+    }
+
+    public async update(user: UserEntity): Promise<Result<User, Error>> {
+        const entity = this.toEntity(user);
+        await this.createConnection();
+        await this.repository.save(entity);
+        await this.closeConnection();
+        return Result.Ok(this.toDomain(entity));
+    }
+
+    public async get(id: string): Promise<Result<User, Error>> {
+        await this.createConnection();
+        if (id.includes('@')) {
+            const entity = await this.repository.findOne({where: {email: id}});
             await this.closeConnection();
-            return { success: true, value: entity.id };
-        } catch (err) {
-            return { success: false, error: err as Error };
+            return entity ? Result.Ok(this.toDomain(entity)) : Result.Err(new UserDoesNotExistError("User not found"));
         }
-    }
-
-    public async update(user: User): Promise<CommandResult<string>> {
-        try {
-            const entity = this.toEntity(user);
-            this.createConnection();
-            await this.repository.save(entity);
-            this.closeConnection();
-            return { success: true, value: entity.id };
-        } catch (err) {
-            return { success: false, error: err as Error };
-        }
-    }
-
-    public async get(id: string): Promise<User | null> {
-        this.createConnection();
         const entity = await this.repository.findOne({where: {id: id}});
-        this.closeConnection();
-        return entity ? this.toDomain(entity) : null;
+        await this.closeConnection();
+        return entity ? Result.Ok(this.toDomain(entity)) : Result.Err(new UserDoesNotExistError("User not found"));
     }
 
-    public async delete(id: string): Promise<CommandResult<string>> {
-        try {
-            this.createConnection();
-            if (await this.repository.exists({where:{id: id}})) {
-                const res = await this.repository.delete(id);
-                this.closeConnection();
-                return { success: true, value: `Rows affected: ${res.affected}`};
-            }
-            return { success: true, value: `IdRows affected: 0`};
-        } catch (err) {
-            return { success: false, error: err as Error };
-        }
+    public async delete(id: string): Promise<Result<boolean, Error>> {
+        await this.createConnection();
+        const res = await (await this.get(id))
+            .flatMap(async () => Result.Ok(await this.repository.delete(id)))
+        await this.closeConnection();
+        return matchRes(res, {
+            Ok: () => Result.Ok(true),
+            Err: (err) => Result.Err(err)
+        });
     }
 
-    private toEntity(user: User): UserModel {
+    private toEntity(user: UserEntity): UserModel {
         const entity = new UserModel();
         entity.id = user.id?? "No Id";
         entity.email = user.email;
-        entity.password = user.password;
+        entity.password = user.getPassword();
         entity.createdAt = user.createdAt?? new Date();
         entity.updatedAt = user.userMetadata.updatedAt;
         entity.userRole = user.userMetadata.userRole;
@@ -88,7 +85,6 @@ export class TypeORMUserRepository implements UserRepository {
             id: entity.id as UUID,
             createdAt: entity.createdAt,
             email: entity.email,
-            password: entity.password,
             userMetadata: {
                 name: entity.name,
                 updatedAt: entity.updatedAt,
