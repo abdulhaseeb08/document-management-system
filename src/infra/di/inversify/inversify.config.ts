@@ -7,7 +7,7 @@ import { HasherService } from "../../../app/services/hasher/HasherService";
 import { Argon2Adpater } from "../../hasher/argon2Adapter";
 import type { JWTAuth } from "../../../app/ports/jwt/jwt";
 import { JoseJWTAdapter } from "../../jwt/joseAdapter";
-import { AuthService } from "../../../app/services/auth/AuthService";
+import { AuthService } from "../../../app/services/User/UserService";
 import { UserController } from "../../../presentation/controllers/userController";
 import { INVERIFY_IDENTIFIERS } from "./inversify.types";
 import type { UserRepository } from "../../../domain/entities/user/port/UserRepository";

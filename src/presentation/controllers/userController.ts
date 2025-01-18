@@ -1,4 +1,4 @@
-import { AuthService } from "../../app/services/auth/AuthService";
+import { AuthService } from "../../app/services/User/UserService";
 import { inject, injectable } from "inversify";
 import  type { User } from "../../domain/entities/user/User";
 import { UserRole } from "../../shared/enums/UserRole";
