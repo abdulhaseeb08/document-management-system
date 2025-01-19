@@ -1,5 +1,5 @@
 import type { UUID } from "../../../shared/types";
-import { PermissionType } from "../../../shared/enums/PermissionType";
+import { PermissionType } from "../../../shared/enums/DocumentRole";
 
 export interface Permission {
   readonly id: UUID; // uuid of permission

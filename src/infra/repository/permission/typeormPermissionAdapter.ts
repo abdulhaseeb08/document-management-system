@@ -3,44 +3,40 @@ import { PermissionModel } from "../../database/typeorm/models/PermissionModel";
 import type { Permission } from "../../../domain/entities/permission/Permisson";
 import { Repository} from "typeorm";
 import { DataSource } from 'typeorm';
-import type { CommandResult, UUID } from "../../../shared/types";
-import { injectable } from "inversify";
+import type { UUID } from "../../../shared/types";
+import { injectable, inject } from "inversify";
+import { Result } from "joji-ct-fp";
+import { PermissionDoesNotExistError } from "../../../app/errors/PermissionErrors";
+import { INVERIFY_IDENTIFIERS } from "../../di/inversify/inversify.types";
+import type { PermissionEntity } from "../../../domain/entities/permission/PermissionEntity";
 
 @injectable()
 export class TypeORMPermissionRepository implements PermissionRepository {
     private repository: Repository<PermissionModel>;
     public dataSource: DataSource;
 
-    constructor(dataSource: DataSource) {
+    constructor(@inject(INVERIFY_IDENTIFIERS.TypeORMDataSource) dataSource: DataSource) {
         this.dataSource = dataSource;
         this.repository = dataSource.getRepository(PermissionModel);
     }
 
-    public async grantPermission(permission: Permission): Promise<CommandResult<string>> {
-        try {
-            const entity = this.toEntity(permission);
-            await this.repository.save(entity);
-            return { success: true, value: entity.id };
-        } catch (err) {
-            return { success: false, error: err as Error };
-        }
+    public async grantPermission(permission: PermissionEntity): Promise<Result<Permission, Error>> {
+        const entity = this.toEntity(permission);
+        await this.repository.save(entity);
+        return Result.Ok(this.toDomain(entity));
     }
 
-    public async getPermissions(userId: string): Promise<Permission[] | null> {
+    public async getPermissions(userId: string): Promise<Result<Permission[], Error>> {
         const entity = await this.repository.find({where: {user: userId}});
-        return entity ? this.toDomain(entity) : null;
+        return entity ? Result.Ok(this.toDomain(entity)) : Result.Err(new PermissionDoesNotExistError("No permissions found"));
     }
 
-    public async revokePermission(id: string): Promise<CommandResult<string>> {
-        try {
-            if (await this.repository.exists({where:{id: id}})) {
-                const res = await this.repository.delete(id);
-                return { success: true, value: `Rows affected: ${res.affected}`};
-            }
-            return { success: true, value: `IdRows affected: 0`};
-        } catch (err) {
-            return { success: false, error: err as Error };
+    public async revokePermission(id: string): Promise<Result<boolean, Error>> {
+        if (await this.repository.exists({where:{id: id}})) {
+            const res = await this.repository.delete(id);
+            return Result.Ok(true);
         }
+        return Result.Err(new PermissionDoesNotExistError("Permission not found"));
     }
 
     private toEntity(permission: Permission): PermissionModel {

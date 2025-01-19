@@ -43,3 +43,11 @@ export class DocumentDeleteError extends DocumentError {
       this.name = "DocumentDeleteError";
     }
 }
+
+export class UnsupportedFileFormatError extends DocumentError {
+    constructor(details: string) {
+      super("Unsupported file format", 
+        {code: ErrorCodes.UNSUPPORTED_FILE_FORMAT_ERROR, details: details});
+      this.name = "UnsupportedFileFormatError";
+    }
+}

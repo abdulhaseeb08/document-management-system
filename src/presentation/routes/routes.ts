@@ -1,6 +1,7 @@
 import { UserController } from "../controllers/userController";
+import { DocumentController } from "../controllers/documentController";
 
-export const router = async(request: Request, userController: UserController): Promise<Response> => {
+export const router = async(request: Request, userController: UserController, documentController: DocumentController): Promise<Response> => {
     const url = new URL(request.url);
 
     if (url.pathname === "/registerUser" && request.method === "POST") {
@@ -20,6 +21,10 @@ export const router = async(request: Request, userController: UserController): P
     }
     if (url.pathname === "/deleteUser" && request.method === "DELETE") {
         return await userController.deleteUserHandler(request);
+    }
+
+    if (url.pathname === "/createDocument" && request.method === "POST") {
+        return await documentController.createDocumentHandler(request);
     }
     // If none of the above matched:
     return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });

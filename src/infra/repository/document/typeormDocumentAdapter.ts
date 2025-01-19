@@ -9,6 +9,7 @@ import { injectable, inject } from "inversify";
 import { matchRes, Result } from "joji-ct-fp";
 import { DocumentDoesNotExistError } from "../../../app/errors/DocumentErrors";
 import { INVERIFY_IDENTIFIERS } from "../../di/inversify/inversify.types";
+import type { DocumentEntity } from "../../../domain/entities/document/DocumentEntity";
 
 @injectable()
 export class TypeORMDocumnetRepository implements DocumentRepository {
@@ -20,16 +21,16 @@ export class TypeORMDocumnetRepository implements DocumentRepository {
         this.repository = dataSource.getRepository(DocumentModel);
     }
 
-    public async create(document: Document): Promise<Result<string, Error>> {
+    public async create(document: DocumentEntity): Promise<Result<Document, Error>> {
         const entity = this.toEntity(document);
         await this.repository.save(entity);
-        return Result.Ok(entity.id);
+        return Result.Ok(this.toDomain(entity));
     }
 
-    public async update(document: Document): Promise<Result<string, Error>> {
+    public async update(document: DocumentEntity): Promise<Result<Document, Error>> {
         const entity = this.toEntity(document);
         await this.repository.save(entity);
-        return Result.Ok(entity.id);
+        return Result.Ok(this.toDomain(entity));
     }
 
     public async get(id: string): Promise<Result<Document, Error>> {
@@ -46,7 +47,7 @@ export class TypeORMDocumnetRepository implements DocumentRepository {
         });
     }
 
-    public async search(metadata: DocumentMetadata): Promise<Result<Document[], Error>> {
+    public async search(metadata: Partial<DocumentMetadata>): Promise<Result<Document[], Error>> {
         const query = this.repository.createQueryBuilder('document')
         if (metadata.name) {
             query.andWhere("LOWER(document.name) LIKE :name", { name: `%${metadata.name.toLowerCase()}%` });

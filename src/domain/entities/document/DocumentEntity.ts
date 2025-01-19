@@ -13,17 +13,22 @@ export class DocumentEntity implements Document {
     readonly filePath: string;
     documentMetadata: DocumentMetadata;
 
-    private constructor(creatorId: UUID, filePath: string, documentMetadata: DocumentMetadata) {
-        this.id = crypto.randomUUID() as UUID;
+    private constructor(creatorId: UUID, filePath: string, name: string, tags: string[], documentFormat: FileFormat, id?: UUID, createdAt?: Date, updatedBy?: UUID) {
+        this.id = id ?? crypto.randomUUID() as UUID;
         this.creatorId = creatorId;
         this.filePath = filePath;
-        this.documentMetadata.updatedBy = creatorId; //on initial document creation, this field will be the creator
-        this.createdAt = new Date();
-        this.documentMetadata = documentMetadata;
+        this.documentMetadata = {
+            name: name,
+            tags: tags,
+            updatedAt: new Date(),
+            updatedBy: updatedBy ?? creatorId,
+            documentFormat: documentFormat
+        }
+        this.createdAt = createdAt ?? new Date();
     }
 
-    public static create(creatorId: UUID, filePath: string, documentMetadata: DocumentMetadata): Result<DocumentEntity, Error> {
-        const documentEntity = new DocumentEntity(creatorId, filePath, documentMetadata);
+    public static create(creatorId: UUID, filePath: string, name: string, tags: string[], documentFormat: FileFormat, id?: UUID, createdAt?: Date, updatedBy?: UUID): Result<DocumentEntity, Error> {
+        const documentEntity = new DocumentEntity(creatorId, filePath, name, tags, documentFormat, id, createdAt, updatedBy);
         const validation = validateDocument(documentEntity.serialize());
         return matchRes(validation, {
             Ok: () => Result.Ok(documentEntity),

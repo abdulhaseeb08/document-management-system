@@ -1,4 +1,4 @@
-import { PermissionType } from "../../shared/enums/PermissionType";
+import { PermissionType } from "../../shared/enums/DocumentRole";
 import { z } from "zod";
 import { UUIDSchema } from "./UUIDSchema";
 

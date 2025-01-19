@@ -2,7 +2,9 @@ import type { UUID } from "../../../shared/types";
 import { PermissionSchema } from "../../../app/schema/PermissionSchema";
 import type { CommandResult } from "../../../shared/types";
 import type { Permission } from "./Permisson";
-import { PermissionType } from "../../../shared/enums/PermissionType";
+import { DocumentRole } from "../../../shared/enums/DocumentRole";
+import { matchRes, Result } from "joji-ct-fp";
+import { validatePermission } from "../../schema/PermissionSchema";
 
 export class PermissionEntity implements Permission {
     readonly id: UUID; // uuid of permission
@@ -10,9 +12,9 @@ export class PermissionEntity implements Permission {
     readonly creatorId: UUID; //uuid of the user who granted the permission
     readonly documentId: UUID; //uuid of the granted document
     readonly createdAt: Date;
-    readonly permissionType: PermissionType //the type of permission
+    readonly permissionType: DocumentRole //the type of permission
 
-    private constructor(userId: UUID, creatorId: UUID, documentId: UUID, permissionType: PermissionType) {
+    private constructor(userId: UUID, creatorId: UUID, documentId: UUID, permissionType: DocumentRole) {
         this.id = crypto.randomUUID() as UUID;
         this.userId = userId;
         this.creatorId = creatorId;
@@ -21,13 +23,13 @@ export class PermissionEntity implements Permission {
         this.createdAt = new Date();
     }
 
-    public static create(userId: UUID, creatorId: UUID, documentId: UUID, permissionType: PermissionType): CommandResult<PermissionEntity> {
+    public static create(userId: UUID, creatorId: UUID, documentId: UUID, permissionType: DocumentRole): Result<PermissionEntity, Error> {
         const permissionEntity = new PermissionEntity(userId, creatorId, documentId, permissionType);
-        const validation = PermissionSchema.safeParse(permissionEntity.serialize());
-        if (validation.success) {
-            return {success: true, value: permissionEntity};
-        }
-        return {success: false, error: Error(validation.error.message)};
+        const validation = validatePermission(permissionEntity.serialize());
+        return matchRes(validation, {
+            Ok: () => Result.Ok(permissionEntity),
+            Err: (err) => Result.Err(err)
+        })
     }
 
     public getId(): UUID {
@@ -50,7 +52,7 @@ export class PermissionEntity implements Permission {
         return this.createdAt;
     }
 
-    public getPermissionType(): PermissionType {
+    public getPermissionType(): DocumentRole {
         return this.permissionType;
     }
 

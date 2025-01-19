@@ -9,5 +9,7 @@ export const INVERIFY_IDENTIFIERS = {
     PermissionService: Symbol('PermissionService'),
     TypeORMDataSource: Symbol('TypeORMDataSource'),
     Logger: Symbol('Logger'),
-    DatabaseManager: Symbol('DatabaseManager')
+    FileService: Symbol('FileService'),
+    DatabaseManager: Symbol('DatabaseManager'),
+    PermissionRepository: Symbol('PermissionRepository')
 }
