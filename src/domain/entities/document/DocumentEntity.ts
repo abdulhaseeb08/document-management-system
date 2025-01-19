@@ -3,8 +3,8 @@ import type { Document} from "./Document";
 import type { DocumentMetadata } from "../../valueObjects/DocumentMetadata";
 import type { UUID } from "../../../shared/types";
 import { matchRes, Result } from "joji-ct-fp";
-import { validateDocument, validateDocumentMetadata } from "../../schema/DocumentSchema";
-import { DocumentMetadataSchema } from "../../../app/schema/DocumentScehma";
+import { validateDocument } from "../../schema/DocumentSchema";
+import { validateArray, validateString, validateUUID } from "../../schema/Validatiors";
 
 export class DocumentEntity implements Document {
     readonly id: UUID;
@@ -29,20 +29,39 @@ export class DocumentEntity implements Document {
         })
     }
 
-    public setName(userId: UUID, name: string): void {
-        DocumentMetadataSchema.shape.name.safeParse(name);
-        DocumentMetadataSchema.shape.updatedBy.safeParse(userId);
-        this.documentMetadata.name = name;
-        this.documentMetadata.updatedAt = new Date();
-        this.documentMetadata.updatedBy = userId;
+    public setName(userId: UUID, name: string): Result<string, Error> {
+        const res = validateString(name, 100)
+            .flatMap(() => validateUUID(userId))
+                .flatMap(() => {
+                    this.documentMetadata.name = name;
+                    this.documentMetadata.updatedAt = new Date();
+                    this.documentMetadata.updatedBy = userId;
+                    return Result.Ok("updated");
+                })
+
+        return matchRes(res, {
+            Ok: (res) => Result.Ok(res),
+            Err: (err) => {
+                return Result.Err(err);
+            }
+        });
     }
 
-    public setTags(userId: UUID, tags: string[]): void {
-        DocumentMetadataSchema.shape.tags.safeParse(tags);
-        DocumentMetadataSchema.shape.updatedBy.safeParse(userId);
-        this.documentMetadata.tags = tags;
-        this.documentMetadata.updatedAt = new Date();
-        this.documentMetadata.updatedBy = userId;
+    public setTags(userId: UUID, tags: string[]): Result<string, Error> {
+        const res = validateArray(tags, 20)
+            .flatMap(() => validateUUID(userId))
+                .flatMap(() => {
+                    this.documentMetadata.tags = tags;
+                    this.documentMetadata.updatedAt = new Date();
+                    this.documentMetadata.updatedBy = userId;
+                    return Result.Ok("updated");
+                })
+        return matchRes(res, {
+            Ok: (res) => Result.Ok(res),
+            Err: (err) => {
+                return Result.Err(err);
+            }
+        });
     }
 
     public getId(): UUID {
