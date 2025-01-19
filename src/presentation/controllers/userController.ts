@@ -15,7 +15,6 @@ export class UserController {
     public async parseRequestBody(request: Request): Promise<Result<any, Error>> {
         this.logger.info("Parsing request body");
         const body = await request.json().catch(() => null);
-        console.log(body);
         if (!body) {
             this.logger.error("Failed to parse request body: Missing payload");
             return Result.Err(new Error("Missing payload"));
@@ -88,15 +87,17 @@ export class UserController {
 
     public async updateUserHandler(request: Request): Promise<Response> {
         this.logger.info("Handling user update request");
-        const res = await (await this.parseRequestBody(request))
-            .flatMap((body) => {
-                this.logger.info("Validating user update DTO");
-                return validateUserUpdateDto(body);
-            })
-            .flatMap(async (updateDto) => {
-                this.logger.info("Updating user");
-                return await this.userService.updateUser(updateDto);
-            });
+        const res = await (await this.parseRequestUrl(request))
+            .flatMap(async (queryParams) => (await this.parseRequestBody(request))
+                .flatMap((body) => {
+                    this.logger.info("Validating user update DTO");
+                    const combinedParams = { ...queryParams, ...body };
+                    return validateUserUpdateDto(combinedParams);
+                })
+                    .flatMap(async (updateDto) => {
+                        this.logger.info("Updating user");
+                        return await this.userService.updateUser(updateDto);
+                    }));
 
         return matchRes(res, {
             Ok: (user) => {
@@ -137,15 +138,17 @@ export class UserController {
 
     public async deleteUserHandler(request: Request): Promise<Response> {
         this.logger.info("Handling delete user request");
-        const res = await (await this.parseRequestBody(request))
+        const res = await (await this.parseRequestUrl(request))
+        .flatMap(async (queryParams) => (await this.parseRequestBody(request))
             .flatMap((body) => {
                 this.logger.info("Validating user delete DTO");
-                return validateUserGetOrDeleteDto(body);
+                const combinedParams = { ...queryParams, ...body };
+                return validateUserGetOrDeleteDto(combinedParams);
             })
             .flatMap(async (deleteDto) => {
                 this.logger.info("Deleting user");
                 return await this.userService.deleteUser(deleteDto);
-            });
+            }));
 
         return matchRes(res, {
             Ok: () => {

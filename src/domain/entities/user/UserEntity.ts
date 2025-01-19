@@ -14,8 +14,8 @@ export class UserEntity implements User {
     updatedBy: UUID;
     userMetadata: UserMetadata;
 
-    private constructor(email: string, password: string, name: string, userRole: UserRole) {
-        this.id = crypto.randomUUID() as UUID;
+    private constructor(email: string, password: string, name: string, userRole: UserRole, id?: UUID, createdAt?: Date, updatedBy?: UUID) {
+        this.id = id ?? crypto.randomUUID() as UUID;
         this.email = email;
         this.password = password;
         this.userMetadata = {
@@ -23,12 +23,12 @@ export class UserEntity implements User {
             updatedAt: new Date(),
             userRole: userRole,
           };
-        this.createdAt = new Date();
-        this.updatedBy = this.id;
+        this.createdAt = createdAt ?? new Date();
+        this.updatedBy = updatedBy ?? this.id;
     }
 
-    public static create(email: string, password: string, name: string, userRole: UserRole): Result<UserEntity, Error> {
-        const userEntity = new UserEntity(email, password, name, userRole);
+    public static create(email: string, password: string, name: string, userRole: UserRole, id?: UUID, createdAt?: Date, updatedBy?: UUID): Result<UserEntity, Error> {
+        const userEntity = new UserEntity(email, password, name, userRole, id, createdAt, updatedBy);
         const validation = validateUser(userEntity.serialize(), password);
         return matchRes(validation, {
             Ok: () => Result.Ok(userEntity),

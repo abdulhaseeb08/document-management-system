@@ -21,46 +21,48 @@ export class TypeORMUserRepository implements UserRepository {
     }
 
     async createConnection() {
-        await this.dataSource.initialize();
+        if (!this.dataSource.isInitialized) {
+            await this.dataSource.initialize();
+        }
     }
 
     async closeConnection() {
-        await this.dataSource.destroy();
+        if (this.dataSource.isInitialized) {
+            await this.dataSource.destroy();
+        }
     }
 
     public async create(user: UserEntity): Promise<Result<User, Error>> {
         const entity = this.toEntity(user);
-        await this.createConnection();
         await this.repository.save(entity);
-        await this.closeConnection();
         return Result.Ok(this.toDomain(entity));
     }
 
     public async update(user: UserEntity): Promise<Result<User, Error>> {
         const entity = this.toEntity(user);
-        await this.createConnection();
         await this.repository.save(entity);
-        await this.closeConnection();
         return Result.Ok(this.toDomain(entity));
     }
 
     public async get(id: string): Promise<Result<User, Error>> {
-        await this.createConnection();
+        console.log("after create connection");
         if (id.includes('@')) {
             const entity = await this.repository.findOne({where: {email: id}});
-            await this.closeConnection();
+
             return entity ? Result.Ok(this.toDomain(entity)) : Result.Err(new UserDoesNotExistError("User not found"));
         }
         const entity = await this.repository.findOne({where: {id: id}});
-        await this.closeConnection();
+        console.log("after get");
+        console.log("after close connection");
         return entity ? Result.Ok(this.toDomain(entity)) : Result.Err(new UserDoesNotExistError("User not found"));
     }
 
     public async delete(id: string): Promise<Result<boolean, Error>> {
-        await this.createConnection();
+        console.log("insideeee");
+        console.log("after create connection");
         const res = await (await this.get(id))
             .flatMap(async () => Result.Ok(await this.repository.delete(id)))
-        await this.closeConnection();
+        console.log("after close connection");
         return matchRes(res, {
             Ok: () => Result.Ok(true),
             Err: (err) => Result.Err(err)

@@ -13,6 +13,7 @@ import { UserAlreadyExistsError } from "../../errors/UserErrors";
 import { UnauthorizedAccessError } from "../../errors/TokenErrors";
 import { UserRole } from "../../../shared/enums/UserRole";
 import type { DatabaseManager } from "../../ports/database/database";
+import type { UUID } from "../../../shared/types";
 
 @injectable()
 export class UserService {
@@ -92,7 +93,7 @@ export class UserService {
           return Result.Err(new UnauthorizedAccessError("User does not have access to this resource"));
         }
         return Result.Ok(payload);
-      }).flatMap(async () => (await this.userRepository.get(userUpdateDto.userId))
+      }).flatMap(async (payload) => (await this.userRepository.get(userUpdateDto.userId))
           .flatMap(async (user) => {
             const res = await this.databaseManager.query<string>("SELECT password FROM public.user_model WHERE id = $1", [user.id]);
             let safePassword = res.unwrap()[0].password;
@@ -112,9 +113,9 @@ export class UserService {
             if (userUpdateDto.name) {
               user.userMetadata.name = userUpdateDto.name;
             }
-            return UserEntity.create(user.email, safePassword, user.userMetadata.name, user.userMetadata.userRole)
+            return UserEntity.create(user.email, safePassword, user.userMetadata.name, user.userMetadata.userRole, user.id, user.createdAt, payload.userId as UUID)
             .flatMap(
-              async (userEntity) => (await this.userRepository.create(userEntity))
+              async (userEntity) => (await this.userRepository.update(userEntity))
             )
           }
           )

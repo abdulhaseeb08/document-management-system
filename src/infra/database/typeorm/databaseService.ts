@@ -15,7 +15,6 @@ export class TypeORMDatabaseManager implements DatabaseManager {
     }
 
     async createConnection(): Promise<QueryRunner> {
-        await this.dataSource.initialize();
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         return queryRunner;
@@ -23,7 +22,6 @@ export class TypeORMDatabaseManager implements DatabaseManager {
 
     async closeConnection(queryRunner: QueryRunner) {
         await queryRunner.release();
-        await this.dataSource.destroy();
     }
 
     public async query<T>(query: string, parameters?: any[]): Promise<Result<Array<Record<string, T>>, Error>> {

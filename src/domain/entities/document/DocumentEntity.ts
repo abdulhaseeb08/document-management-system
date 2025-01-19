@@ -2,7 +2,9 @@ import { FileFormat } from "../../../shared/enums/FileFormats";
 import type { Document} from "./Document";
 import type { DocumentMetadata } from "../../valueObjects/DocumentMetadata";
 import type { UUID } from "../../../shared/types";
-import { DocumentSchema, DocumentMetadataSchema} from "../../../app/schema/DocumentScehma";
+import { matchRes, Result } from "joji-ct-fp";
+import { validateDocument, validateDocumentMetadata } from "../../schema/DocumentSchema";
+import { DocumentMetadataSchema } from "../../../app/schema/DocumentScehma";
 
 export class DocumentEntity implements Document {
     readonly id: UUID;
@@ -18,10 +20,13 @@ export class DocumentEntity implements Document {
         this.documentMetadata = documentMetadata;
     }
 
-    public static create(creatorId: UUID, documentMetadata: DocumentMetadata): DocumentEntity {
+    public static create(creatorId: UUID, documentMetadata: DocumentMetadata): Result<DocumentEntity, Error> {
         const documentEntity = new DocumentEntity(creatorId, documentMetadata);
-        DocumentSchema.safeParse(documentEntity.serialize());
-        return documentEntity;
+        const validation = validateDocument(documentEntity.serialize());
+        return matchRes(validation, {
+            Ok: () => Result.Ok(documentEntity),
+            Err: (err) => Result.Err(err)
+        })
     }
 
     public setName(userId: UUID, name: string): void {
