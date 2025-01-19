@@ -10,18 +10,20 @@ export class DocumentEntity implements Document {
     readonly id: UUID;
     readonly creatorId: UUID;
     readonly createdAt: Date;
+    readonly filePath: string;
     documentMetadata: DocumentMetadata;
 
-    private constructor(creatorId: UUID, documentMetadata: DocumentMetadata) {
+    private constructor(creatorId: UUID, filePath: string, documentMetadata: DocumentMetadata) {
         this.id = crypto.randomUUID() as UUID;
         this.creatorId = creatorId;
+        this.filePath = filePath;
         this.documentMetadata.updatedBy = creatorId; //on initial document creation, this field will be the creator
         this.createdAt = new Date();
         this.documentMetadata = documentMetadata;
     }
 
-    public static create(creatorId: UUID, documentMetadata: DocumentMetadata): Result<DocumentEntity, Error> {
-        const documentEntity = new DocumentEntity(creatorId, documentMetadata);
+    public static create(creatorId: UUID, filePath: string, documentMetadata: DocumentMetadata): Result<DocumentEntity, Error> {
+        const documentEntity = new DocumentEntity(creatorId, filePath, documentMetadata);
         const validation = validateDocument(documentEntity.serialize());
         return matchRes(validation, {
             Ok: () => Result.Ok(documentEntity),
@@ -103,6 +105,7 @@ export class DocumentEntity implements Document {
     serialize(): Document {
         return {
            id: this.id,
+           filePath: this.filePath,
            creatorId: this.creatorId,
            createdAt: this.createdAt,
            documentMetadata: this.documentMetadata
