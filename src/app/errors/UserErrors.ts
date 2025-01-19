@@ -51,3 +51,11 @@ export class UserAlreadyExistsError extends UserError {
       this.name = "UserAlreadyExistsError";
     }
 }
+
+export class IncorrectPasswordError extends UserError {
+    constructor(details: string) {
+      super("Incorrect password", 
+        {code: ErrorCodes.INCORRECT_PASSWORD_ERROR, details: details});
+      this.name = "IncorrectPasswordError";
+    }
+}

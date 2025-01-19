@@ -8,16 +8,28 @@ import { INVERIFY_IDENTIFIERS } from "../../di/inversify/inversify.types";
 
 @injectable()
 export class TypeORMDatabaseManager implements DatabaseManager {
-    public queryRunner: QueryRunner;
+    private dataSource: DataSource;
 
     constructor(@inject(INVERIFY_IDENTIFIERS.TypeORMDataSource) dataSource: DataSource) {
-        this.queryRunner = dataSource.createQueryRunner()
+        this.dataSource = dataSource
+    }
+
+    async createConnection(): Promise<QueryRunner> {
+        await this.dataSource.initialize();
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        return queryRunner;
+    }
+
+    async closeConnection(queryRunner: QueryRunner) {
+        await queryRunner.release();
+        await this.dataSource.destroy();
     }
 
     public async query<T>(query: string, parameters?: any[]): Promise<Result<Array<Record<string, T>>, Error>> {
-        await this.queryRunner.connect();
-        const res = await this.queryRunner.query(query, parameters, true);
-        await this.queryRunner.release();
+        const queryRunner = await this.createConnection();
+        const res = await queryRunner.query(query, parameters, true);
+        await this.closeConnection(queryRunner);
         if (res.affected === 0) {
             return Result.Err(new Error("No records found"));
         }
@@ -25,16 +37,16 @@ export class TypeORMDatabaseManager implements DatabaseManager {
     }
 
     public async createSchema(schemaName: string): Promise<Result<boolean, Error>> {
-        await this.queryRunner.connect();
-        await this.queryRunner.createSchema(schemaName, true);
-        await this.queryRunner.release();
+        const queryRunner = await this.createConnection();
+        await queryRunner.createSchema(schemaName, true);
+        await this.closeConnection(queryRunner);
         return Result.Ok(true);
     }
 
     public async createTable(table: Table): Promise<Result<boolean, Error>> {
-        await this.queryRunner.connect();
-        await this.queryRunner.createTable(table, true);
-        await this.queryRunner.release();
+        const queryRunner = await this.createConnection();
+        await queryRunner.createTable(table, true);
+        await this.closeConnection(queryRunner);
         return Result.Ok(true);
     }
 }

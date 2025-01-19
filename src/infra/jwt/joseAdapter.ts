@@ -28,7 +28,7 @@ export class JoseJWTAdapter implements JWTAuth {
             const { payload } = await jwtVerify(token, secret);
             return Result.Ok(payload);
         } catch (err) {
-            return Result.Err(Error('Opppsie'));
+            return Result.Err(Error('Invalid or Expired Token'));
         }
     }
 }

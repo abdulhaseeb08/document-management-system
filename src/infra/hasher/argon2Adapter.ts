@@ -1,10 +1,10 @@
 import argon2 from "argon2";
 import type { Hasher } from "../../app/ports/hasher/Hasher";
-import type { CommandResult } from "../../shared/types";
 import { inject, injectable } from "inversify";
 import { INVERIFY_IDENTIFIERS } from "../di/inversify/inversify.types";
 import type { Logger } from "../../app/ports/logger/logger";
 import { Result } from "joji-ct-fp";
+import { IncorrectPasswordError } from "../../app/errors/UserErrors";
 
 @injectable()
 export class Argon2Adpater implements Hasher {
@@ -21,10 +21,10 @@ export class Argon2Adpater implements Hasher {
     }
 
     public async compare(password: string, hashedPassword: string): Promise<Result<boolean, Error>> {
-        try {
-            return Result.Ok(await argon2.verify(hashedPassword, password));
-        } catch (err) {
-            return Result.Err(err as Error);
+        const isSame = await argon2.verify(hashedPassword, password);
+        if (!isSame) {
+            return Result.Err(new IncorrectPasswordError("Password is incorrect"));
         }
+        return Result.Ok(isSame);
     }
 }

@@ -58,7 +58,7 @@ export class UserService {
     this.logger.info("User login attempt with email: " + userLoginDto.email);
 
     const res = await (await this.userRepository.get(userLoginDto.email))
-      .flatMap(async (user) => (await this.databaseManager.query<string>("SELECT password FROM users WHERE id = $1", [user.id]))
+      .flatMap(async (user) => (await this.databaseManager.query<string>("SELECT password FROM public.user_model WHERE id = $1", [user.id]))
         .flatMap(async (safePassword) => (await this.hasher.compare(userLoginDto.password, safePassword[0].password))
           .flatMap(async () => {
             const secretKey = createSecretKey(new TextEncoder().encode(process.env.JWT_SECRET))
@@ -94,7 +94,7 @@ export class UserService {
         return Result.Ok(payload);
       }).flatMap(async () => (await this.userRepository.get(userUpdateDto.userId))
           .flatMap(async (user) => {
-            const res = await this.databaseManager.query<string>("SELECT password FROM users WHERE id = $1", [user.id]);
+            const res = await this.databaseManager.query<string>("SELECT password FROM public.user_model WHERE id = $1", [user.id]);
             let safePassword = res.unwrap()[0].password;
             if (userUpdateDto.password) {
               const hashedPassword = await this.hasher.hash(userUpdateDto.password);
