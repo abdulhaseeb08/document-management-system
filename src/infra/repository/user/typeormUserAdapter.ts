@@ -13,7 +13,7 @@ import { UserDoesNotExistError } from "../../../app/errors/UserErrors";
 @injectable()
 export class TypeORMUserRepository implements UserRepository {
     private repository: Repository<UserModel>;
-    public dataSource: DataSource;
+    private dataSource: DataSource;
 
     constructor(@inject(INVERIFY_IDENTIFIERS.TypeORMDataSource) dataSource: DataSource) {
         this.dataSource = dataSource;

@@ -7,7 +7,6 @@ import {
     UpdateDateColumn,
     ManyToOne,
     OneToMany,
-    JoinColumn,
 }
 from "typeorm"
 import { UserModel } from "./UserModel"
@@ -23,6 +22,9 @@ export class DocumentModel {
 
     @Column({type: "varchar", length: 100, nullable: false})
     name: string
+
+    @Column({type: "varchar", length: 255, nullable: false})
+    filePath: string
 
     @Column({type: "jsonb", nullable: true})
     tags: string[]

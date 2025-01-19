@@ -6,6 +6,6 @@ export interface DocumentRepository {
     create(document: Document): Promise<Result<string, Error>>;
     update(document: Document): Promise<Result<string, Error>>;
     get(id: string): Promise<Result<Document, Error>>;
-    delete(id: string): Promise<Result<string, Error>>;
+    delete(id: string): Promise<Result<boolean, Error>>;
     search(metadata: DocumentMetadata): Promise<Result<Document[], Error>>;
 }
