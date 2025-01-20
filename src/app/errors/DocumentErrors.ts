@@ -35,6 +35,14 @@ export class DocumentDoesNotExistError extends DocumentError {
       this.name = "DocumentDoesNotExistError";
     }
 }
+
+export class DocumentAlreadyExistsError extends DocumentError {
+    constructor(details: string) {
+      super("Document already exists", 
+        {code: ErrorCodes.DOCUMENT_ALREADY_EXISTS_ERROR, details: details});
+      this.name = "DocumentAlreadyExistsError";
+    }
+}
   
 export class DocumentDeleteError extends DocumentError {
     constructor(details: string) {

@@ -11,6 +11,7 @@ import {
 from "typeorm"
 import { UserModel } from "./UserModel"
 import { PermissionModel } from "./PermissionModel"
+import type { Relation } from 'typeorm';
 
 @Entity()
 export class DocumentModel {
@@ -18,7 +19,7 @@ export class DocumentModel {
     id: string
 
     @ManyToOne(() => UserModel, (user) => user.documents)
-    creator: string 
+    creator: Relation<UserModel>; 
 
     @Column({type: "varchar", length: 100, nullable: false})
     name: string
@@ -39,7 +40,7 @@ export class DocumentModel {
     updatedAt: Date
 
     @ManyToOne(() => UserModel, (user) => user.documents)
-    updatedBy: string
+    updatedBy: Relation<UserModel>
 
     @OneToMany(() => PermissionModel, (permission) => permission.id)
     permissions: PermissionModel[]

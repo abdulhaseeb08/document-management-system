@@ -1,7 +1,7 @@
 import type { PermissionRepository } from "../../../domain/entities/permission/port/PermissionRepository";
 import { PermissionModel } from "../../database/typeorm/models/PermissionModel";
 import type { Permission } from "../../../domain/entities/permission/Permisson";
-import { Repository} from "typeorm";
+import { Repository, type Relation} from "typeorm";
 import { DataSource } from 'typeorm';
 import type { UUID } from "../../../shared/types";
 import { injectable, inject } from "inversify";
@@ -9,6 +9,8 @@ import { Result } from "joji-ct-fp";
 import { PermissionDoesNotExistError } from "../../../app/errors/PermissionErrors";
 import { INVERIFY_IDENTIFIERS } from "../../di/inversify/inversify.types";
 import type { PermissionEntity } from "../../../domain/entities/permission/PermissionEntity";
+import type { UserModel } from "../../database/typeorm/models/UserModel";
+import type { DocumentModel } from "../../database/typeorm/models/DocumentModel";
 
 @injectable()
 export class TypeORMPermissionRepository implements PermissionRepository {
@@ -27,7 +29,7 @@ export class TypeORMPermissionRepository implements PermissionRepository {
     }
 
     public async getPermissions(userId: string): Promise<Result<Permission[], Error>> {
-        const entity = await this.repository.find({where: {user: userId}});
+        const entity = await this.repository.find({where: {user: {id: userId}}, relations: ['user']});
         return entity ? Result.Ok(this.toDomain(entity)) : Result.Err(new PermissionDoesNotExistError("No permissions found"));
     }
 
@@ -42,9 +44,9 @@ export class TypeORMPermissionRepository implements PermissionRepository {
     private toEntity(permission: Permission): PermissionModel {
         const entity = new PermissionModel();
         entity.id = permission.id;
-        entity.user = permission.userId;
-        entity.creator = permission.creatorId;
-        entity.document = permission.documentId;
+        entity.user = {id: permission.userId} as unknown as UserModel;
+        entity.creator = {id: permission.creatorId} as unknown as UserModel;
+        entity.document = {id: permission.documentId} as unknown as DocumentModel;
         entity.createdAt = permission.createdAt;
         entity.permissionType = permission.permissionType;
         return entity;
@@ -56,9 +58,9 @@ export class TypeORMPermissionRepository implements PermissionRepository {
         if (Array.isArray(entity)) {
             return entity.map(singleEntity => ({
                 id: singleEntity.id as UUID,
-                userId: singleEntity.user as UUID,
-                creatorId: singleEntity.creator as UUID,
-                documentId: singleEntity.document as UUID,
+                userId: singleEntity.user.id as UUID,
+                creatorId: singleEntity.creator.id as UUID,
+                documentId: singleEntity.document.id as UUID,
                 createdAt: singleEntity.createdAt,
                 permissionType: singleEntity.permissionType
             }));
@@ -66,9 +68,9 @@ export class TypeORMPermissionRepository implements PermissionRepository {
     
         return {
             id: entity.id as UUID,
-            userId: entity.user as UUID,
-            creatorId: entity.creator as UUID,
-            documentId: entity.document as UUID,
+            userId: entity.user.id as UUID,
+            creatorId: entity.creator.id as UUID,
+            documentId: entity.document.id as UUID,
             createdAt: entity.createdAt,
             permissionType: entity.permissionType
         };

@@ -27,6 +27,10 @@ export class PermissionService {
         });
     }
 
+    public async getPermissions(userId: string): Promise<Result<Permission[], Error>> {
+        return await this.permissionRepository.getPermissions(userId);
+    }
+
     // public async revokePermission(requestorId: string, userId: string, documentId: string, permissionType: PermissionType): Promise<CommandResult<string>> {
     //     const hasPerm = await this.hasPermission(requestorId, userId, documentId, permissionType)
     //     if (hasPerm) {

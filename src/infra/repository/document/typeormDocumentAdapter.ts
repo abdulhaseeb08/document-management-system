@@ -10,6 +10,8 @@ import { matchRes, Result } from "joji-ct-fp";
 import { DocumentDoesNotExistError } from "../../../app/errors/DocumentErrors";
 import { INVERIFY_IDENTIFIERS } from "../../di/inversify/inversify.types";
 import type { DocumentEntity } from "../../../domain/entities/document/DocumentEntity";
+import { UUIDSchema } from "../../../app/schema/UUIDSchema";
+import type { UserModel } from "../../database/typeorm/models/UserModel";
 
 @injectable()
 export class TypeORMDocumnetRepository implements DocumentRepository {
@@ -34,8 +36,16 @@ export class TypeORMDocumnetRepository implements DocumentRepository {
     }
 
     public async get(id: string): Promise<Result<Document, Error>> {
-        const entity = await this.repository.findOne({where: {id: id}});
+        const isUUID = UUIDSchema.safeParse(id).success;
+        const entity = isUUID 
+            ? await this.repository.findOne({ where: { id: id } })
+            : await this.repository.findOne({ where: { name: id } });
         return entity ? Result.Ok(this.toDomain(entity)) : Result.Err(new DocumentDoesNotExistError("Document not found"));
+    }
+
+    public async getAll(userId: UUID): Promise<Result<Document[], Error>> {
+        const entities = await this.repository.find({ where: { creator: { id: userId } }, relations: ['creator', 'updatedBy'] });
+        return entities ? Result.Ok(this.toDomain(entities)) : Result.Err(new DocumentDoesNotExistError("Documents not found"));
     }
 
     public async delete(id: string): Promise<Result<boolean, Error>> {
@@ -72,10 +82,9 @@ export class TypeORMDocumnetRepository implements DocumentRepository {
         entity.tags = document.documentMetadata.tags;
         entity.createdAt = document.createdAt;
         entity.filePath = document.filePath;
-        entity.id = document.creatorId;
+        entity.creator = {id: document.creatorId} as unknown as UserModel;
         entity.updatedAt = document.documentMetadata.updatedAt;
-        entity.updatedBy = document.documentMetadata.updatedBy;
-        entity.creator = document.creatorId;
+        entity.updatedBy = {id: document.documentMetadata.updatedBy} as unknown as UserModel;
         entity.documentFormat = document.documentMetadata.documentFormat;
         return entity;
     }
@@ -86,14 +95,14 @@ export class TypeORMDocumnetRepository implements DocumentRepository {
         if (Array.isArray(entity)) {
             return entity.map(singleEntity => ({
                 id: singleEntity.id as UUID,
-                creatorId: singleEntity.creator as UUID,
+                creatorId: singleEntity.creator.id as UUID,
                 createdAt: singleEntity.createdAt,
                 filePath: singleEntity.filePath,
                 documentMetadata: {
                     name: singleEntity.name,
                     tags: singleEntity.tags,
                     updatedAt: singleEntity.updatedAt,
-                    updatedBy: singleEntity.updatedBy as UUID,
+                    updatedBy: singleEntity.updatedBy.id as UUID,
                     documentFormat: singleEntity.documentFormat
                 }
             }));
@@ -101,14 +110,14 @@ export class TypeORMDocumnetRepository implements DocumentRepository {
     
         return {
             id: entity.id as UUID,
-            creatorId: entity.creator as UUID,
+            creatorId: entity.creator.id as UUID,
             createdAt: entity.createdAt,
             filePath: entity.filePath,
             documentMetadata: {
                 name: entity.name,
                 tags: entity.tags,
                 updatedAt: entity.updatedAt,
-                updatedBy: entity.updatedBy as UUID,
+                updatedBy: entity.updatedBy.id as UUID,
                 documentFormat: entity.documentFormat
             }
         };

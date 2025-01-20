@@ -6,6 +6,7 @@ import { promises as fs } from "fs";
 import { join } from "path";
 import { FileFormat } from "../../../shared/enums/FileFormats";
 import { UnsupportedFileFormatError } from "../../errors/DocumentErrors";
+import type { UUID } from "../../../shared/types";
 
 @injectable()
 export class FileService {
@@ -13,14 +14,14 @@ export class FileService {
         @inject(INVERIFY_IDENTIFIERS.Logger) private logger: Logger
     ) {}
 
-    public async uploadFile(file: File, fileName: string): Promise<Result<string, Error>> {
+    public async uploadFile(file: File, fileName: string, creatorId: UUID): Promise<Result<string, Error>> {
         const fileExtension = this.getFileExtension(file.type);
         if (!fileExtension) {
             this.logger.error("Unsupported file format: " + file.type);
             return Result.Err(new UnsupportedFileFormatError(`Unsupported file format ${file.type}`));
         }
 
-        const filePath = join(String(process.env.FILE_STORAGE_PATH), `${fileName}.${fileExtension}`);
+        const filePath = join(String(process.env.FILE_STORAGE_PATH), `${creatorId}--${fileName}.${fileExtension}`);
         await fs.writeFile(filePath, Buffer.from(await file.arrayBuffer()));
         this.logger.info("File uploaded successfully: " + filePath);
         return Result.Ok(filePath);

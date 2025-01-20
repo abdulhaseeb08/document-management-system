@@ -13,6 +13,8 @@ import { PermissionService } from "../permission/permissionService";
 import { DocumentRole } from "../../../shared/enums/DocumentRole";
 import { createSecretKey } from 'crypto';
 import type { JWTAuth } from "../../ports/jwt/jwt";
+import { DocumentAlreadyExistsError } from "../../errors/DocumentErrors";
+import type { DatabaseManager } from "../../ports/database/database";
 
 @injectable()
 export class DocumentService {
@@ -21,7 +23,8 @@ export class DocumentService {
         @inject(INVERIFY_IDENTIFIERS.Logger) private logger: Logger,
         @inject(FileService) private fileService: FileService,
         @inject(PermissionService) private permissionService: PermissionService,
-        @inject(INVERIFY_IDENTIFIERS.JWT) private jwtAdapter: JWTAuth
+        @inject(INVERIFY_IDENTIFIERS.JWT) private jwtAdapter: JWTAuth,
+        @inject(INVERIFY_IDENTIFIERS.DatabaseManager) private databaseManager: DatabaseManager
     ) {}
 
     public async createDocument(documentCreateDto: DocumentCreateDtoType): Promise<Result<Document, Error>> {
@@ -31,16 +34,35 @@ export class DocumentService {
         const res = await (await this.jwtAdapter.verify(documentCreateDto.token, secretKey))
             .flatMap(async (payload) => {
                 const creatorId = payload.userId as UUID;
-                return (await this.fileService.uploadFile(documentCreateDto.file, documentCreateDto.name))
-                    .flatMap(async (filePath) => {
-                        this.logger.info(`File uploaded successfully: ${filePath}`);
-                        return await DocumentEntity.create(creatorId, filePath, documentCreateDto.name, documentCreateDto.tags ?? [], documentCreateDto.documentFormat)
-                            .flatMap(async (entity) => {
-                                this.logger.info("Document entity created successfully");
-                                return (await this.documentRepository.create(entity))
-                                    .flatMap(async (doc) => (await this.permissionService.grantPermission({userId: creatorId, creatorId: creatorId, documentId: doc.id, permissionType: DocumentRole.CREATOR}))
-                                        .flatMap(() => Result.Ok(doc)));
-                            });
+                return (await this.documentRepository.getAll(creatorId))
+                    .flatMap(async (documents) => {
+                        for (const document of documents) {
+                            if (document.documentMetadata.name === documentCreateDto.name) {
+                                this.logger.warn("Document with name already exists: " + documentCreateDto.name);
+                                return Result.Err(new DocumentAlreadyExistsError("Document with this name already exists"));
+                            }
+                        }
+                        return Result.Ok(documents)
+                            .flatMap(async () => {
+                                return (await this.fileService.uploadFile(documentCreateDto.file, documentCreateDto.name, creatorId))
+                                    .flatMap(async (filePath) => {
+                                        this.logger.info(`File uploaded successfully: ${filePath}`);
+                                        return await DocumentEntity.create(creatorId, filePath, documentCreateDto.name, documentCreateDto.tags ?? [], documentCreateDto.documentFormat)
+                                            .flatMap(async (entity) => {
+                                                this.logger.info("Document entity created successfully");
+                                                return (await this.documentRepository.create(entity))
+                                                    .flatMap(async (doc) => 
+                                                        (await this.permissionService.grantPermission({
+                                                            userId: creatorId, 
+                                                            creatorId: creatorId, 
+                                                            documentId: doc.id, 
+                                                            permissionType: DocumentRole.CREATOR
+                                                        }))
+                                                        .flatMap(() => Result.Ok(doc))
+                                                    );
+                                            });
+                                    });
+                            })
                     });
             });
 

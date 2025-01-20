@@ -4,7 +4,8 @@ import {
     PrimaryColumn,
     Column,
     CreateDateColumn,
-    ManyToOne
+    ManyToOne,
+    type Relation
 }
 from "typeorm";
 import { DocumentRole } from "../../../../shared/enums/DocumentRole";
@@ -19,13 +20,13 @@ export class PermissionModel {
     id: string
 
     @ManyToOne(() => UserModel, (user) => user.permissions)
-    creator: string
+    creator: Relation<UserModel>
 
     @ManyToOne(() => UserModel, (user) => user.permissions)
-    user: string
+    user: Relation<UserModel>
 
     @ManyToOne(() => DocumentModel, (document) => document.permissions)
-    document: string 
+    document: Relation<DocumentModel>
 
     @Column({type: "enum", enum: DocumentRole, nullable: false})
     permissionType: DocumentRole
