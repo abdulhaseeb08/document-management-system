@@ -18,7 +18,7 @@ export class DocumentModel {
     @PrimaryColumn({type: "varchar", length: 36, nullable: false})
     id: string
 
-    @ManyToOne(() => UserModel, (user) => user.documents)
+    @ManyToOne(() => UserModel, (user) => user.documents, {onDelete: "CASCADE"})
     creator: Relation<UserModel>; 
 
     @Column({type: "varchar", length: 100, nullable: false})
@@ -39,9 +39,9 @@ export class DocumentModel {
     @UpdateDateColumn()
     updatedAt: Date
 
-    @ManyToOne(() => UserModel, (user) => user.documents)
+    @ManyToOne(() => UserModel, (user) => user.documents, {onDelete: "CASCADE"})
     updatedBy: Relation<UserModel>
 
-    @OneToMany(() => PermissionModel, (permission) => permission.id)
+    @OneToMany(() => PermissionModel, (permission) => permission.id, {cascade: true})
     permissions: PermissionModel[]
 }

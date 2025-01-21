@@ -7,7 +7,7 @@ import { injectable, inject } from "inversify";
 import { INVERIFY_IDENTIFIERS } from "../../../infra/di/inversify/inversify.types";
 import type { Logger } from "../../ports/logger/logger";
 import { matchRes, Result } from "joji-ct-fp";
-import type { DocumentCreateDtoType, DocumentGetDtoType, DocumentUpdateDtoType, DownloadDocumentDtoType } from "../../dtos/DocumentDtos";
+import type { DocumentCreateDtoType, DocumentDeleteDtoType, DocumentGetDtoType, DocumentUpdateDtoType, DownloadDocumentDtoType } from "../../dtos/DocumentDtos";
 import { FileService } from "../file/fileService";
 import { PermissionService } from "../permission/permissionService";
 import { DocumentRole } from "../../../shared/enums/DocumentRole";
@@ -196,10 +196,37 @@ export class DocumentService {
         });
     }
 
-    public async deleteDocument(id: string): Promise<Result<boolean, Error>> {
-        const res = await this.documentRepository.delete(id);
+    public async deleteDocument(deleteDocumentDto: DocumentDeleteDtoType): Promise<Result<boolean, Error>> {
+        this.logger.info("Deleting document");
+        const secretKey = createSecretKey(new TextEncoder().encode(process.env.JWT_SECRET));
+        const res = await (await this.jwtAdapter.verify(deleteDocumentDto.token, secretKey))
+            .flatMap(async (payload) => {
+                const extractedUserId = payload.userId as UUID;
+                return (await this.permissionService.getPermissions(extractedUserId))
+                    .flatMap(async (permissions) => {
+                        const hasPermission = permissions.some(permission => 
+                            permission.documentId === deleteDocumentDto.documentId && 
+                            permission.permissionType === DocumentRole.CREATOR
+                        );
+
+                        if (!hasPermission) {
+                            return Result.Err(new DocumentDoesNotExistError("Document does not exist or access denied"));
+                        }
+
+                        return (await this.documentRepository.get(deleteDocumentDto.documentId))
+                            .flatMap(async (document) => {
+                                const filePath = document.filePath;
+                                return (await this.fileService.deleteFile(filePath))
+                                    .flatMap(async () => {
+                                        return (await this.documentRepository.delete(deleteDocumentDto.documentId))
+                                            .flatMap(() => Result.Ok(true));
+                                    });
+                            });
+                    });
+            });
+
         return matchRes(res, {
-            Ok: (success) => Result.Ok(success),
+            Ok: (res) => Result.Ok(res),
             Err: (err) => Result.Err(err)
         });
     }

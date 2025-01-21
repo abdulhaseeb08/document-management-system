@@ -39,6 +39,10 @@ export const router = async(request: Request, userController: UserController, do
         return await documentController.downloadDocumentHandler(request);
     }
 
+    if (url.pathname === "/deleteDocument" && request.method === "DELETE") {
+        return await documentController.deleteDocumentHandler(request);
+    }
+
     // If none of the above matched:
     return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
 }

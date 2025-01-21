@@ -37,9 +37,9 @@ export class UserModel {
     @UpdateDateColumn()
     updatedAt: Date
 
-    @OneToMany(() => DocumentModel, (document) => document.id)
+    @OneToMany(() => DocumentModel, (document) => document.id, {cascade: true})
     documents: DocumentModel[]
 
-    @OneToMany(() => PermissionModel, (permission) => permission.id)
+    @OneToMany(() => PermissionModel, (permission) => permission.id, {cascade: true})
     permissions: PermissionModel[]
 }

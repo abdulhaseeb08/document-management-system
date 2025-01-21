@@ -1,6 +1,6 @@
 import { DocumentService } from "../../app/services/document/DocumentService";
 import { inject, injectable } from "inversify";
-import { validateDocumentCreateDto, validateDocumentGetDto, validateDocumentUpdateDto, validateDownloadDocumentDto } from "../validators/DocumentRequestValidators";
+import { validateDocumentCreateDto, validateDocumentGetDto, validateDocumentUpdateDto, validateDownloadDocumentDto, validateDeleteDocumentDto } from "../validators/DocumentRequestValidators";
 import type { Logger } from "../../app/ports/logger/logger";
 import { INVERIFY_IDENTIFIERS } from "../../infra/di/inversify/inversify.types";
 import { matchRes, Result } from "joji-ct-fp";
@@ -160,4 +160,30 @@ export class DocumentController {
             }
         });
     }
+
+    public async deleteDocumentHandler(request: Request): Promise<Response> {
+        this.logger.info("Handling document deletion request");
+
+        const res = await (await this.parseRequestUrl(request))
+            .flatMap((queryParams) => {
+                const combinedParams = Object({ ...queryParams });
+                return (validateDeleteDocumentDto(combinedParams))
+                .flatMap(async (deleteDocumentDto) => {
+                    this.logger.info("Deleting document");
+                    return await this.documentService.deleteDocument(deleteDocumentDto);
+                });
+            });
+
+        return matchRes(res, {
+            Ok: () => {
+                this.logger.info("Document deleted successfully");
+                return new Response(JSON.stringify({ success: true }), { status: 200 });
+            },
+            Err: (error) => {
+                this.logger.error(`Error occurred during document deletion: ${error}`);
+                return new Response(JSON.stringify(error), { status: 400 });
+            }
+        });
+    }
+
 }
