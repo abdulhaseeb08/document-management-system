@@ -5,6 +5,6 @@ export interface Document {
   readonly id: UUID; // uuid of document
   readonly creatorId: UUID; // uuid of user who created it
   readonly createdAt: Date;
-  readonly filePath: string;
+  filePath: string;
   documentMetadata: DocumentMetadata;
 }

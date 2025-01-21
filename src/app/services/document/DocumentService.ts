@@ -7,13 +7,13 @@ import { injectable, inject } from "inversify";
 import { INVERIFY_IDENTIFIERS } from "../../../infra/di/inversify/inversify.types";
 import type { Logger } from "../../ports/logger/logger";
 import { matchRes, Result } from "joji-ct-fp";
-import type { DocumentCreateDtoType } from "../../dtos/DocumentDtos";
+import type { DocumentCreateDtoType, DocumentUpdateDtoType } from "../../dtos/DocumentDtos";
 import { FileService } from "../file/fileService";
 import { PermissionService } from "../permission/permissionService";
 import { DocumentRole } from "../../../shared/enums/DocumentRole";
 import { createSecretKey } from 'crypto';
 import type { JWTAuth } from "../../ports/jwt/jwt";
-import { DocumentAlreadyExistsError } from "../../errors/DocumentErrors";
+import { DocumentAlreadyExistsError, DocumentDoesNotExistError } from "../../errors/DocumentErrors";
 import type { DatabaseManager } from "../../ports/database/database";
 
 @injectable()
@@ -78,27 +78,67 @@ export class DocumentService {
         });
     }
 
-    // public async updateDocument(updateDocumentDto: DocumentUpdateDtoType): Promise<Result<string, Error>> {
-    //     const res = await this.documentRepository.update(updateDocumentDto.documentId, updateDocumentDto.name, updateDocumentDto.tags);
-    //     return matchRes(res, {
-    //         Ok: (id) => Result.Ok(id),
-    //         Err: (err) => Result.Err(err)
-    //     });
-    // }
+    public async updateDocument(updateDocumentDto: DocumentUpdateDtoType): Promise<Result<Document, Error>> {
+        this.logger.info("Starting document update process");
 
-    // public async getDocument(id: string): Promise<Result<Document, Error>> {
-    //     return await this.documentRepository.get(id);
-    // }
+        const secretKey = createSecretKey(new TextEncoder().encode(process.env.JWT_SECRET));
+        const res = await (await this.jwtAdapter.verify(updateDocumentDto.token, secretKey))
+            .flatMap(async (payload) => {
+                const userId = payload.userId as UUID;
+                return (await this.permissionService.getPermissions(userId))
+                    .flatMap(async (permissions) => {
+                        const hasPermission = permissions.some(permission => 
+                            (permission.documentId === updateDocumentDto.documentId && 
+                            (permission.permissionType === DocumentRole.EDITOR || 
+                            permission.permissionType === DocumentRole.CREATOR))
+                        );
 
-    // public async deleteDocument(id: string): Promise<Result<boolean, Error>> {
-    //     const res = await this.documentRepository.delete(id);
-    //     return matchRes(res, {
-    //         Ok: (success) => Result.Ok(success),
-    //         Err: (err) => Result.Err(err)
-    //     });
-    // }
+                        if (!hasPermission) {
+                            this.logger.warn(`User ID: ${userId} does not have permission to update document ID: ${updateDocumentDto.documentId}`);
+                            return Result.Err(new DocumentDoesNotExistError("Document does not exist or access denied"));
+                        }
 
-    // public async searchRepository(metadata: DocumentMetadata): Promise<Result<Document[], Error>> {
-    //     return await this.documentRepository.search(metadata);
-    // }
+                        return (await this.documentRepository.get(updateDocumentDto.documentId))
+                            .flatMap(async (document) => {
+                                const oldFilePath = document.filePath;
+                                const newFilePath = oldFilePath.replace(document.documentMetadata.name, updateDocumentDto.name ?? document.documentMetadata.name);
+
+                                document.documentMetadata.name = updateDocumentDto.name ?? document.documentMetadata.name;
+                                document.filePath = newFilePath;
+
+                                document.documentMetadata.tags = updateDocumentDto.tags ?? document.documentMetadata.tags;
+
+                                return (await this.fileService.renameFile(oldFilePath, newFilePath))
+                                    .flatMap(async() => {
+                                        return (await DocumentEntity.create(document.creatorId, document.filePath, document.documentMetadata.name, document.documentMetadata.tags, document.documentMetadata.documentFormat, document.id, document.createdAt, userId))
+                                            .flatMap(async (entity) => {
+                                                return (await this.documentRepository.update(entity))
+                                                    .flatMap(() => Result.Ok(entity));
+                                            });
+                                    })
+                            });
+                    });
+            });
+
+        return matchRes(res, {
+            Ok: (id) => Result.Ok(id),
+            Err: (err) => Result.Err(err)
+        });
+    }
+
+    public async getDocument(id: string): Promise<Result<Document, Error>> {
+        return await this.documentRepository.get(id);
+    }
+
+    public async deleteDocument(id: string): Promise<Result<boolean, Error>> {
+        const res = await this.documentRepository.delete(id);
+        return matchRes(res, {
+            Ok: (success) => Result.Ok(success),
+            Err: (err) => Result.Err(err)
+        });
+    }
+
+    public async searchRepository(metadata: DocumentMetadata): Promise<Result<Document[], Error>> {
+        return await this.documentRepository.search(metadata);
+    }
 }

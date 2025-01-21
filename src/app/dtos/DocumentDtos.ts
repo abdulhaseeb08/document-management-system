@@ -11,7 +11,6 @@ export const DocumentCreateDto = z.object({
 
 export const DocumentUpdateDto = z.object({
   token: z.string(),
-  requestorId: z.string().uuid({ message: "Invalid requestor ID" }),
   documentId: z.string().uuid({ message: "Invalid document ID" }),
   name: z.string().max(100, { message: "Name cannot exceed 100 characters" }).optional(),
   tags: z.array(z.string().max(20, { message: "Tag cannot exceed 20 characters" })).optional(),

@@ -10,7 +10,7 @@ export class DocumentEntity implements Document {
     readonly id: UUID;
     readonly creatorId: UUID;
     readonly createdAt: Date;
-    readonly filePath: string;
+    filePath: string;
     documentMetadata: DocumentMetadata;
 
     private constructor(creatorId: UUID, filePath: string, name: string, tags: string[], documentFormat: FileFormat, id?: UUID, createdAt?: Date, updatedBy?: UUID) {

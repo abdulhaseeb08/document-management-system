@@ -29,7 +29,7 @@ export class TypeORMPermissionRepository implements PermissionRepository {
     }
 
     public async getPermissions(userId: string): Promise<Result<Permission[], Error>> {
-        const entity = await this.repository.find({where: {user: {id: userId}}, relations: ['user']});
+        const entity = await this.repository.find({where: {user: {id: userId}}, relations: ['user', 'creator', 'document']});
         return entity ? Result.Ok(this.toDomain(entity)) : Result.Err(new PermissionDoesNotExistError("No permissions found"));
     }
 

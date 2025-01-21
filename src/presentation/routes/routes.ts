@@ -26,6 +26,11 @@ export const router = async(request: Request, userController: UserController, do
     if (url.pathname === "/createDocument" && request.method === "POST") {
         return await documentController.createDocumentHandler(request);
     }
+
+    if (url.pathname === "/updateDocument" && request.method === "PUT") {
+        return await documentController.updateDocumentHandler(request);
+    }
+
     // If none of the above matched:
     return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
 }

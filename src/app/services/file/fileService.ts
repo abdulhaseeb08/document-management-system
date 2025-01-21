@@ -21,10 +21,32 @@ export class FileService {
             return Result.Err(new UnsupportedFileFormatError(`Unsupported file format ${file.type}`));
         }
 
-        const filePath = join(String(process.env.FILE_STORAGE_PATH), `${creatorId}--${fileName}.${fileExtension}`);
+        const filePath = await this.createFilePath(creatorId, fileName, fileExtension);
         await fs.writeFile(filePath, Buffer.from(await file.arrayBuffer()));
         this.logger.info("File uploaded successfully: " + filePath);
         return Result.Ok(filePath);
+    }
+
+    public async createFilePath(creatorId: UUID, fileName: string, fileExtension: string): Promise<string> {
+        return join(String(process.env.FILE_STORAGE_PATH), `${creatorId}--${fileName}.${fileExtension}`);
+    }
+
+    public async getFile(filePath: string): Promise<Result<Buffer, Error>> {
+        const file = await fs.readFile(filePath);
+        this.logger.info("File retrieved successfully: " + filePath);
+        return Result.Ok(file);
+    }
+
+    public async deleteFile(filePath: string): Promise<Result<boolean, Error>> {
+        await fs.unlink(filePath);
+        this.logger.info("File deleted successfully: " + filePath);
+        return Result.Ok(true);
+    }
+
+    public async renameFile(oldFilePath: string, newFilePath: string): Promise<Result<boolean, Error>> {
+        await fs.rename(oldFilePath, newFilePath);
+        this.logger.info("File renamed successfully: " + oldFilePath + " to " + newFilePath);
+        return Result.Ok(true);
     }
 
     private getFileExtension(mimeType: string): string | null {

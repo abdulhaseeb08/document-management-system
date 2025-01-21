@@ -1,6 +1,6 @@
 import { DocumentService } from "../../app/services/document/DocumentService";
 import { inject, injectable } from "inversify";
-import { validateDocumentCreateDto } from "../validators/DocumentRequestValidators";
+import { validateDocumentCreateDto, validateDocumentUpdateDto } from "../validators/DocumentRequestValidators";
 import type { Logger } from "../../app/ports/logger/logger";
 import { INVERIFY_IDENTIFIERS } from "../../infra/di/inversify/inversify.types";
 import { matchRes, Result } from "joji-ct-fp";
@@ -79,6 +79,32 @@ export class DocumentController {
             },
             Err: (error) => {
                 this.logger.error(`Error occurred during document creation: ${error}`);
+                return new Response(JSON.stringify(error), { status: 400 });
+            }
+        });
+    }
+
+    public async updateDocumentHandler(request: Request): Promise<Response> {
+        this.logger.info("Handling document update request");
+
+        const res = await (await this.parseRequestUrl(request))
+            .flatMap(async (queryParams) => (await this.parseRequestBody(request))
+                .flatMap(async (body) => {
+                    const combinedParams = Object({ ...queryParams, ...body });
+                    return (await validateDocumentUpdateDto(combinedParams))
+                    .flatMap(async (updateDocumentDto) => {
+                        this.logger.info("Updating document");
+                        return await this.documentService.updateDocument(updateDocumentDto);
+                    });
+                }));
+
+        return matchRes(res, {
+            Ok: (document) => {
+                this.logger.info("Document updated successfully");
+                return new Response(JSON.stringify(document), { status: 200 });
+            },
+            Err: (error) => {
+                this.logger.error(`Error occurred during document update: ${error}`);
                 return new Response(JSON.stringify(error), { status: 400 });
             }
         });

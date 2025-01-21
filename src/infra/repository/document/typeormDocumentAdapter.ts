@@ -38,8 +38,8 @@ export class TypeORMDocumnetRepository implements DocumentRepository {
     public async get(id: string): Promise<Result<Document, Error>> {
         const isUUID = UUIDSchema.safeParse(id).success;
         const entity = isUUID 
-            ? await this.repository.findOne({ where: { id: id } })
-            : await this.repository.findOne({ where: { name: id } });
+            ? await this.repository.findOne({ where: { id: id } ,relations: ['creator', 'updatedBy']})
+            : await this.repository.findOne({ where: { name: id } ,relations: ['creator', 'updatedBy']});
         return entity ? Result.Ok(this.toDomain(entity)) : Result.Err(new DocumentDoesNotExistError("Document not found"));
     }
 
@@ -107,7 +107,6 @@ export class TypeORMDocumnetRepository implements DocumentRepository {
                 }
             }));
         }
-    
         return {
             id: entity.id as UUID,
             creatorId: entity.creator.id as UUID,
