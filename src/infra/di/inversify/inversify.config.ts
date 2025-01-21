@@ -23,6 +23,7 @@ import { TypeORMPermissionRepository } from "../../repository/permission/typeorm
 import { PermissionService } from "../../../app/services/permission/permissionService";
 import { FileService } from "../../../app/services/file/fileService";
 import { DocumentController } from "../../../presentation/controllers/documentController";
+import { PermissionController } from "../../../presentation/controllers/permissionController";
 
 const container = new Container();
 
@@ -46,7 +47,7 @@ container.bind<PermissionService>(PermissionService).toSelf();
 container.bind<FileService>(FileService).toSelf();
 container.bind<UserController>(UserController).toSelf();
 container.bind<DocumentController>(DocumentController).toSelf();
-
+container.bind<PermissionController>(PermissionController).toSelf();
 
 
 export default container;

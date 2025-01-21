@@ -53,8 +53,8 @@ export class DocumentService {
                                                 return (await this.documentRepository.create(entity))
                                                     .flatMap(async (doc) => 
                                                         (await this.permissionService.grantPermission({
+                                                            token: documentCreateDto.token,
                                                             userId: creatorId, 
-                                                            creatorId: creatorId, 
                                                             documentId: doc.id, 
                                                             permissionType: DocumentRole.CREATOR
                                                         }))

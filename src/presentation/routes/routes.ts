@@ -1,7 +1,8 @@
 import { UserController } from "../controllers/userController";
 import { DocumentController } from "../controllers/documentController";
+import { PermissionController } from "../controllers/permissionController";
 
-export const router = async(request: Request, userController: UserController, documentController: DocumentController): Promise<Response> => {
+export const router = async(request: Request, userController: UserController, documentController: DocumentController, permissionController: PermissionController): Promise<Response> => {
     const url = new URL(request.url);
 
     if (url.pathname === "/registerUser" && request.method === "POST") {
@@ -47,6 +48,13 @@ export const router = async(request: Request, userController: UserController, do
         return await documentController.searchDocumentHandler(request);
     }
 
+    if (url.pathname === "/grantPermission" && request.method === "POST") {
+        return await permissionController.grantPermissionHandler(request);
+    }
+
+    if (url.pathname === "/revokePermission" && request.method === "DELETE") {
+        return await permissionController.revokePermissionHandler(request);
+    }
     // If none of the above matched:
     return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
 }

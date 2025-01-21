@@ -35,3 +35,11 @@ export class PermissionDeleteError extends PermissionError {
       this.name = "PermissionDeleteError";
     }
 }
+
+export class PermissionAlreadyExistsError extends PermissionError {
+    constructor(details: string) {
+      super("Permission already exists", 
+        {code: ErrorCodes.PERMISSION_ALREADY_EXISTS_ERROR, details: details});
+      this.name = "PermissionAlreadyExistsError";
+    }
+}
