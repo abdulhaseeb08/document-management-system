@@ -3,7 +3,6 @@ import type { DocumentRepository } from "../../../domain/entities/document/port/
 import { DocumentService } from "../../../app/services/document/DocumentService";
 import { TypeORMDocumnetRepository } from "../../repository/document/typeormDocumentAdapter";
 import type { Hasher } from "../../../app/ports/hasher/Hasher";
-import { HasherService } from "../../../app/services/hasher/HasherService";
 import { Argon2Adpater } from "../../hasher/argon2Adapter";
 import type { JWTAuth } from "../../../app/ports/jwt/jwt";
 import { JoseJWTAdapter } from "../../jwt/joseAdapter";
@@ -41,7 +40,6 @@ container.bind<PermissionRepository>(INVERIFY_IDENTIFIERS.PermissionRepository).
 
 // Binding services to self
 container.bind<DocumentService>(DocumentService).toSelf();
-container.bind<HasherService>(HasherService).toSelf();
 container.bind<UserService>(UserService).toSelf();
 container.bind<PermissionService>(PermissionService).toSelf();
 container.bind<FileService>(FileService).toSelf();
