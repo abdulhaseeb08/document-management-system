@@ -32,7 +32,6 @@ export const DocumentDeleteDto = z.object({
 
 export const DocumentSearchDto = z.object({
   token: z.string(),
-  requestorId: z.string().uuid({ message: "Invalid requestor ID" }),
   name: z.string().max(100, { message: "Name cannot exceed 100 characters" }).optional(),
   tags: z.array(z.string().max(20, { message: "Tag cannot exceed 20 characters" })).optional(),
   documentFormat: z.nativeEnum(FileFormat).optional(),

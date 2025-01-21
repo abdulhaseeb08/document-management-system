@@ -1,6 +1,6 @@
 import { DocumentService } from "../../app/services/document/DocumentService";
 import { inject, injectable } from "inversify";
-import { validateDocumentCreateDto, validateDocumentGetDto, validateDocumentUpdateDto, validateDownloadDocumentDto, validateDeleteDocumentDto } from "../validators/DocumentRequestValidators";
+import { validateDocumentCreateDto, validateDocumentGetDto, validateDocumentUpdateDto, validateDownloadDocumentDto, validateDeleteDocumentDto, validateDocumentSearchDto } from "../validators/DocumentRequestValidators";
 import type { Logger } from "../../app/ports/logger/logger";
 import { INVERIFY_IDENTIFIERS } from "../../infra/di/inversify/inversify.types";
 import { matchRes, Result } from "joji-ct-fp";
@@ -185,5 +185,34 @@ export class DocumentController {
             }
         });
     }
+
+    public async searchDocumentHandler(request: Request): Promise<Response> {
+        this.logger.info("Handling document search request");
+        const res = await (await this.parseRequestBody(request))
+            .flatMap(async (body) => {
+                return (await this.parseRequestUrl(request))
+                    .flatMap((queryParams) => {
+                        const combinedParams = Object({ ...queryParams, ...body });
+                        console.log(combinedParams);
+                        return validateDocumentSearchDto(combinedParams)
+                            .flatMap(async (documentSearchDto) => {
+                                this.logger.info("Searching documents");
+                                return await this.documentService.searchRepository(documentSearchDto);
+                            });
+                    });
+            });
+
+        return matchRes(res, {
+            Ok: (documents) => {
+                this.logger.info("Documents found successfully");
+                return new Response(JSON.stringify(documents), { status: 200 });
+            },
+            Err: (error) => {
+                this.logger.error(`Error occurred during document search: ${error}`);
+                return new Response(JSON.stringify(error), { status: 400 });
+            }
+        });
+    }
+
 
 }

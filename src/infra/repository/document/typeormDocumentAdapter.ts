@@ -10,7 +10,7 @@ import { matchRes, Result } from "joji-ct-fp";
 import { DocumentDoesNotExistError } from "../../../app/errors/DocumentErrors";
 import { INVERIFY_IDENTIFIERS } from "../../di/inversify/inversify.types";
 import type { DocumentEntity } from "../../../domain/entities/document/DocumentEntity";
-import { UUIDSchema } from "../../../app/schema/UUIDSchema";
+import { UUIDSchema } from "../../../shared/types";
 import type { UserModel } from "../../database/typeorm/models/UserModel";
 
 @injectable()
@@ -59,6 +59,8 @@ export class TypeORMDocumnetRepository implements DocumentRepository {
 
     public async search(metadata: Partial<DocumentMetadata>): Promise<Result<Document[], Error>> {
         const query = this.repository.createQueryBuilder('document')
+            .leftJoinAndSelect('document.creator', 'creator')
+            .leftJoinAndSelect('document.updatedBy', 'updatedBy');
         if (metadata.name) {
             query.andWhere("LOWER(document.name) LIKE :name", { name: `%${metadata.name.toLowerCase()}%` });
         }
@@ -67,7 +69,7 @@ export class TypeORMDocumnetRepository implements DocumentRepository {
         }
         if (metadata.updatedAt) {
             query.andWhere("DATE(document.updatedAt) = :updatedAt", { updatedAt: metadata.updatedAt.toISOString().split('T')[0] });
-          }
+        }
         if (metadata.documentFormat) {
             query.andWhere("document.documentFormat = :documentFormat", { documentFormat: metadata.documentFormat });
         }

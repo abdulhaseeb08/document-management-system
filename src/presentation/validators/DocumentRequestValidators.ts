@@ -1,6 +1,6 @@
 import { Result } from "joji-ct-fp";
-import { DocumentCreateDto, DocumentGetDto, DocumentUpdateDto, DownloadDocumentDto, DocumentDeleteDto } from "../../app/dtos/DocumentDtos";
-import type { DocumentCreateDtoType, DocumentGetDtoType, DocumentUpdateDtoType, DownloadDocumentDtoType, DocumentDeleteDtoType } from "../../app/dtos/DocumentDtos";
+import { DocumentCreateDto, DocumentGetDto, DocumentUpdateDto, DownloadDocumentDto, DocumentDeleteDto, DocumentSearchDto } from "../../app/dtos/DocumentDtos";
+import type { DocumentCreateDtoType, DocumentGetDtoType, DocumentUpdateDtoType, DownloadDocumentDtoType, DocumentDeleteDtoType, DocumentSearchDtoType } from "../../app/dtos/DocumentDtos";
 import { ZodValidationError } from "../../app/errors/ZodValidationErrors";
 
 export const validateDocumentCreateDto = (body: any): Result<DocumentCreateDtoType, Error> => {
@@ -37,6 +37,14 @@ export const validateDownloadDocumentDto = (body: any): Result<DownloadDocumentD
 
 export const validateDeleteDocumentDto = (body: any): Result<DocumentDeleteDtoType, Error> => {
     const document = DocumentDeleteDto.safeParse(body);
+    if (!document.success) {
+        return Result.Err(new ZodValidationError(document.error));
+    }
+    return Result.Ok(document.data);
+};
+
+export const validateDocumentSearchDto = (body: any): Result<DocumentSearchDtoType, Error> => {
+    const document = DocumentSearchDto.safeParse(body);
     if (!document.success) {
         return Result.Err(new ZodValidationError(document.error));
     }

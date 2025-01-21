@@ -7,7 +7,7 @@ import { injectable, inject } from "inversify";
 import { INVERIFY_IDENTIFIERS } from "../../../infra/di/inversify/inversify.types";
 import type { Logger } from "../../ports/logger/logger";
 import { matchRes, Result } from "joji-ct-fp";
-import type { DocumentCreateDtoType, DocumentDeleteDtoType, DocumentGetDtoType, DocumentUpdateDtoType, DownloadDocumentDtoType } from "../../dtos/DocumentDtos";
+import type { DocumentCreateDtoType, DocumentDeleteDtoType, DocumentGetDtoType, DocumentSearchDtoType, DocumentUpdateDtoType, DownloadDocumentDtoType } from "../../dtos/DocumentDtos";
 import { FileService } from "../file/fileService";
 import { PermissionService } from "../permission/permissionService";
 import { DocumentRole } from "../../../shared/enums/DocumentRole";
@@ -231,7 +231,44 @@ export class DocumentService {
         });
     }
 
-    public async searchRepository(metadata: DocumentMetadata): Promise<Result<Document[], Error>> {
-        return await this.documentRepository.search(metadata);
+    public async searchRepository(documentSearchDto: DocumentSearchDtoType): Promise<Result<Document[], Error>> {
+        const secretKey = createSecretKey(new TextEncoder().encode(process.env.JWT_SECRET));
+        const res = await (await this.jwtAdapter.verify(documentSearchDto.token, secretKey))
+            .flatMap(async (payload) => {
+                const extractedUserId = payload.userId as UUID;
+                return (await this.permissionService.getPermissions(extractedUserId))
+                    .flatMap(async (permissions) => {
+                        const allowedDocumentIds = permissions
+                            .filter(permission => 
+                                permission.permissionType === DocumentRole.CREATOR || 
+                                permission.permissionType === DocumentRole.EDITOR || 
+                                permission.permissionType === DocumentRole.VIEWER
+                            )
+                            .map(permission => permission.documentId);
+
+                        return (await this.documentRepository.search({
+                            name: documentSearchDto.name,
+                            tags: documentSearchDto.tags,
+                            documentFormat: documentSearchDto.documentFormat,
+                            updatedAt: documentSearchDto.updatedAt
+                        }))
+                            .flatMap((documents) => {
+                                const accessibleDocuments = documents.filter(document => 
+                                    allowedDocumentIds.includes(document.id)
+                                );
+
+                                if (accessibleDocuments.length > 0) {
+                                    return Result.Ok(accessibleDocuments);
+                                } else {
+                                    return Result.Err(new DocumentDoesNotExistError("Documents not found"));
+                                }
+                            });
+                    });
+            });
+
+        return matchRes(res, {
+            Ok: (res) => Result.Ok(res),
+            Err: (err) => Result.Err(err)
+        });
     }
 }

@@ -43,6 +43,10 @@ export const router = async(request: Request, userController: UserController, do
         return await documentController.deleteDocumentHandler(request);
     }
 
+    if (url.pathname === "/searchDocument" && request.method === "POST") {
+        return await documentController.searchDocumentHandler(request);
+    }
+
     // If none of the above matched:
     return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
 }

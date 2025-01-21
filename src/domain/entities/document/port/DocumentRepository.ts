@@ -10,5 +10,5 @@ export interface DocumentRepository {
     get(id: string): Promise<Result<Document, Error>>;
     getAll(userId: UUID): Promise<Result<Document[], Error>>;
     delete(id: string): Promise<Result<boolean, Error>>;
-    search(metadata: DocumentMetadata): Promise<Result<Document[], Error>>;
+    search(metadata: Partial<DocumentMetadata>): Promise<Result<Document[], Error>>;
 }
