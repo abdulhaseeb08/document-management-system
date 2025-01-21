@@ -1,6 +1,4 @@
 import type { UUID } from "../../../shared/types";
-import { PermissionSchema } from "../../../app/schema/PermissionSchema";
-import type { CommandResult } from "../../../shared/types";
 import type { Permission } from "./Permisson";
 import { DocumentRole } from "../../../shared/enums/DocumentRole";
 import { matchRes, Result } from "joji-ct-fp";
