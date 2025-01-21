@@ -7,7 +7,7 @@ import { injectable, inject } from "inversify";
 import { INVERIFY_IDENTIFIERS } from "../../../infra/di/inversify/inversify.types";
 import type { Logger } from "../../ports/logger/logger";
 import { matchRes, Result } from "joji-ct-fp";
-import type { DocumentCreateDtoType, DocumentUpdateDtoType } from "../../dtos/DocumentDtos";
+import type { DocumentCreateDtoType, DocumentGetDtoType, DocumentUpdateDtoType, DownloadDocumentDtoType } from "../../dtos/DocumentDtos";
 import { FileService } from "../file/fileService";
 import { PermissionService } from "../permission/permissionService";
 import { DocumentRole } from "../../../shared/enums/DocumentRole";
@@ -126,8 +126,74 @@ export class DocumentService {
         });
     }
 
-    public async getDocument(id: string): Promise<Result<Document, Error>> {
-        return await this.documentRepository.get(id);
+    public async get(getDocumentDto: DocumentGetDtoType): Promise<Result<Document[], Error>> {
+        this.logger.info("Retrieving documents");
+        const secretKey = createSecretKey(new TextEncoder().encode(process.env.JWT_SECRET));
+        const res = await (await this.jwtAdapter.verify(getDocumentDto.token, secretKey))
+            .flatMap(async (payload) => {
+                const extractedUserId = payload.userId as UUID;
+                return (await this.permissionService.getPermissions(extractedUserId))
+                    .flatMap(async (permissions) => {
+                        const documentIds = permissions
+                            .filter(permission => 
+                                permission.permissionType === DocumentRole.CREATOR || 
+                                permission.permissionType === DocumentRole.EDITOR || 
+                                permission.permissionType === DocumentRole.VIEWER
+                            )
+                            .map(permission => permission.documentId);
+
+                        if (documentIds.length === 0) {
+                            return Result.Err(new DocumentDoesNotExistError("No documents found"));
+                        }
+
+                        const documents = await Promise.all(documentIds.map(id => this.documentRepository.get(id)));
+                        const successfulDocuments = documents.filter(result => result.isOk()).map(result => result.unwrap());
+                        return Result.Ok(successfulDocuments);
+                    });
+            });
+
+        return matchRes(res, {
+            Ok: (documents) => Result.Ok(documents),
+            Err: (err) => Result.Err(err)
+        });
+    }
+
+    public async downloadDocument(downloadDocumentDto: DownloadDocumentDtoType): Promise<Result<Document, Error>> {
+        this.logger.info("Downloading document");
+        const secretKey = createSecretKey(new TextEncoder().encode(process.env.JWT_SECRET));
+        const res = await (await this.jwtAdapter.verify(downloadDocumentDto.token, secretKey))
+            .flatMap(async (payload) => {
+                const extractedUserId = payload.userId as UUID;
+                return (await this.permissionService.getPermissions(extractedUserId))
+                    .flatMap(async (permissions) => {
+                        const hasPermission = permissions.some(permission => 
+                            permission.documentId === downloadDocumentDto.documentId && 
+                            (permission.permissionType === DocumentRole.CREATOR || 
+                             permission.permissionType === DocumentRole.EDITOR || 
+                             permission.permissionType === DocumentRole.VIEWER)
+                        );
+
+                        if (!hasPermission) {
+                            return Result.Err(new DocumentDoesNotExistError("Document does not exist or access denied"));
+                        }
+
+                        return (await this.documentRepository.get(downloadDocumentDto.documentId))
+                            .flatMap(async (document) => {
+                                if (!document) {
+                                    return Result.Err(new DocumentDoesNotExistError("Document not found"));
+                                }
+
+                                const filePath = document.filePath;
+                                return (await this.fileService.downloadFile(filePath, String(process.env.DOWNLOAD_FOLDER)))
+                                    .flatMap(() => Result.Ok(document));
+                            });
+                    });
+            });
+
+        return matchRes(res, {
+            Ok: (res) => Result.Ok(res),
+            Err: (err) => Result.Err(err)
+        });
     }
 
     public async deleteDocument(id: string): Promise<Result<boolean, Error>> {

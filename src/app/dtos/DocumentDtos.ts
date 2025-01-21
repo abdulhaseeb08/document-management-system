@@ -16,7 +16,16 @@ export const DocumentUpdateDto = z.object({
   tags: z.array(z.string().max(20, { message: "Tag cannot exceed 20 characters" })).optional(),
 });
 
-export const DocumentGetOrDeleteDto = z.object({
+export const DocumentGetDto = z.object({
+  token: z.string()
+});
+
+export const DownloadDocumentDto = z.object({
+  token: z.string(),
+  documentId: z.string().uuid({ message: "Invalid document ID" })
+});
+
+export const DocumentDeleteDto = z.object({
   token: z.string(),
   documentId: z.string().uuid({ message: "Invalid document ID" })
 });
@@ -32,5 +41,7 @@ export const DocumentSearchDto = z.object({
 
 export type DocumentCreateDtoType = z.infer<typeof DocumentCreateDto>;
 export type DocumentUpdateDtoType = z.infer<typeof DocumentUpdateDto>;
-export type DocumentGetOrDeleteDtoType = z.infer<typeof DocumentGetOrDeleteDto>;
+export type DocumentGetDtoType = z.infer<typeof DocumentGetDto>;
+export type DocumentDeleteDtoType = z.infer<typeof DocumentDeleteDto>;
 export type DocumentSearchDtoType = z.infer<typeof DocumentSearchDto>;
+export type DownloadDocumentDtoType = z.infer<typeof DownloadDocumentDto>;

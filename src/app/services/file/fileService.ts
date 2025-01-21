@@ -37,6 +37,19 @@ export class FileService {
         return Result.Ok(file);
     }
 
+    public async downloadFile(filePath: string, downloadFolder: string): Promise<Result<string, Error>> {
+            const fileName = filePath.split('/').pop();
+            if (!fileName) {
+                this.logger.error("Invalid file path: " + filePath);
+                return Result.Err(new Error("Invalid file path"));
+            }
+
+            const destinationPath = join(downloadFolder, fileName);
+            await fs.copyFile(filePath, destinationPath);
+            this.logger.info("File downloaded successfully to: " + destinationPath);
+            return Result.Ok(destinationPath);
+    }
+
     public async deleteFile(filePath: string): Promise<Result<boolean, Error>> {
         await fs.unlink(filePath);
         this.logger.info("File deleted successfully: " + filePath);

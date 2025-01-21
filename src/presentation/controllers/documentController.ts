@@ -1,6 +1,6 @@
 import { DocumentService } from "../../app/services/document/DocumentService";
 import { inject, injectable } from "inversify";
-import { validateDocumentCreateDto, validateDocumentUpdateDto } from "../validators/DocumentRequestValidators";
+import { validateDocumentCreateDto, validateDocumentGetDto, validateDocumentUpdateDto, validateDownloadDocumentDto } from "../validators/DocumentRequestValidators";
 import type { Logger } from "../../app/ports/logger/logger";
 import { INVERIFY_IDENTIFIERS } from "../../infra/di/inversify/inversify.types";
 import { matchRes, Result } from "joji-ct-fp";
@@ -59,13 +59,13 @@ export class DocumentController {
 
         const res = await (await this.parseRequestUrl(request))
             .flatMap(async (queryParams) => (await this.parseFormDataToObject(formData))
-                .flatMap(async (formData) => {
+                .flatMap((formData) => {
                     const combinedParams = Object({ ...queryParams, ...formData });
                     if (typeof combinedParams.tags === 'string') {
                         combinedParams.tags = JSON.parse(combinedParams.tags);
                     }
                     console.log(combinedParams);
-                    return (await validateDocumentCreateDto(combinedParams))
+                    return (validateDocumentCreateDto(combinedParams))
                     .flatMap(async (createDocumentDto) => {
                         this.logger.info("Creating document");
                         return await this.documentService.createDocument(createDocumentDto);
@@ -89,9 +89,9 @@ export class DocumentController {
 
         const res = await (await this.parseRequestUrl(request))
             .flatMap(async (queryParams) => (await this.parseRequestBody(request))
-                .flatMap(async (body) => {
+                .flatMap((body) => {
                     const combinedParams = Object({ ...queryParams, ...body });
-                    return (await validateDocumentUpdateDto(combinedParams))
+                    return (validateDocumentUpdateDto(combinedParams))
                     .flatMap(async (updateDocumentDto) => {
                         this.logger.info("Updating document");
                         return await this.documentService.updateDocument(updateDocumentDto);
@@ -105,6 +105,57 @@ export class DocumentController {
             },
             Err: (error) => {
                 this.logger.error(`Error occurred during document update: ${error}`);
+                return new Response(JSON.stringify(error), { status: 400 });
+            }
+        });
+    }
+    
+    public async getDocumentHandler(request: Request): Promise<Response> {
+        this.logger.info("Handling document retrieval request");
+
+        const res = await (await this.parseRequestUrl(request))
+            .flatMap((queryParams) => {
+                const combinedParams = Object({ ...queryParams });
+                return (validateDocumentGetDto(combinedParams))
+                .flatMap(async (getDocumentDto) => {
+                    this.logger.info("Retrieving document");
+                    return await this.documentService.get(getDocumentDto);
+                });
+            });
+
+        return matchRes(res, {
+            Ok: (documents) => {
+                this.logger.info("Documents retrieved successfully");
+                return new Response(JSON.stringify(documents), { status: 200 });
+            },
+            Err: (error) => {
+                this.logger.error(`Error occurred during document retrieval: ${error}`);
+                return new Response(JSON.stringify(error), { status: 400 });
+            }
+        });
+    }
+
+
+    public async downloadDocumentHandler(request: Request): Promise<Response> {
+        this.logger.info("Handling document download request");
+
+        const res = await (await this.parseRequestUrl(request))
+            .flatMap((queryParams) => {
+                const combinedParams = Object({ ...queryParams });
+                return (validateDownloadDocumentDto(combinedParams))
+                .flatMap(async (downloadDocumentDto) => {
+                    this.logger.info("Downloading document");
+                    return await this.documentService.downloadDocument(downloadDocumentDto);
+                });
+            });
+
+        return matchRes(res, {
+            Ok: (filePath) => {
+                this.logger.info("Document downloaded successfully");
+                return new Response(JSON.stringify({ filePath }), { status: 200 });
+            },
+            Err: (error) => {
+                this.logger.error(`Error occurred during document download: ${error}`);
                 return new Response(JSON.stringify(error), { status: 400 });
             }
         });

@@ -31,6 +31,14 @@ export const router = async(request: Request, userController: UserController, do
         return await documentController.updateDocumentHandler(request);
     }
 
+    if (url.pathname === "/getDocument" && request.method === "GET") {
+        return await documentController.getDocumentHandler(request);
+    }
+
+    if (url.pathname === "/downloadDocument" && request.method === "GET") {
+        return await documentController.downloadDocumentHandler(request);
+    }
+
     // If none of the above matched:
     return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
 }
