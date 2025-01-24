@@ -10,5 +10,7 @@ export const INVERIFY_IDENTIFIERS = {
     Logger: Symbol('Logger'),
     FileService: Symbol('FileService'),
     DatabaseManager: Symbol('DatabaseManager'),
-    PermissionRepository: Symbol('PermissionRepository')
+    PermissionRepository: Symbol('PermissionRepository'),
+    FilePort: Symbol('FilePort'),
+    UserDAO: Symbol('UserDAO')
 }

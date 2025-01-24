@@ -23,6 +23,10 @@ import { PermissionService } from "../../../app/services/permission/permissionSe
 import { FileService } from "../../../app/services/file/fileService";
 import { DocumentController } from "../../../presentation/controllers/documentController";
 import { PermissionController } from "../../../presentation/controllers/permissionController";
+import type { FilePort } from "../../../app/ports/file/File";
+import { LocalStorageAdapter } from "../../file/LocalStorageAdapter";
+import { PostgresUserDAOAdapter } from "../../database/postgres/userDAOAdapter";
+import type { UserDAO } from "../../../app/ports/user/UserDAO";
 
 const container = new Container();
 
@@ -36,6 +40,8 @@ container.bind<DataSource>(INVERIFY_IDENTIFIERS.TypeORMDataSource).toConstantVal
 container.bind<Logger>(INVERIFY_IDENTIFIERS.Logger).toConstantValue(new PinoLogger());
 container.bind<DatabaseManager>(INVERIFY_IDENTIFIERS.DatabaseManager).to(TypeORMDatabaseManager);
 container.bind<PermissionRepository>(INVERIFY_IDENTIFIERS.PermissionRepository).to(TypeORMPermissionRepository);
+container.bind<FilePort>(INVERIFY_IDENTIFIERS.FilePort).to(LocalStorageAdapter);
+container.bind<UserDAO>(INVERIFY_IDENTIFIERS.UserDAO).to(PostgresUserDAOAdapter);
 
 
 // Binding services to self

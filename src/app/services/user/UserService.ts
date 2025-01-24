@@ -12,8 +12,8 @@ import { Result, matchRes } from "joji-ct-fp";
 import { UserAlreadyExistsError } from "../../errors/UserErrors";
 import { UnauthorizedAccessError } from "../../errors/TokenErrors";
 import { UserRole } from "../../../shared/enums/UserRole";
-import type { DatabaseManager } from "../../ports/database/database";
 import type { UUID } from "../../../shared/types";
+import type { UserDAO } from "../../ports/user/UserDAO";
 
 @injectable()
 export class UserService {
@@ -22,7 +22,7 @@ export class UserService {
     @inject(INVERIFY_IDENTIFIERS.Hasher) private hasher: Hasher,
     @inject(INVERIFY_IDENTIFIERS.JWT) private jwtAdapter: JoseJWTAdapter,
     @inject(INVERIFY_IDENTIFIERS.Logger) private logger: Logger,
-    @inject(INVERIFY_IDENTIFIERS.DatabaseManager) private databaseManager: DatabaseManager
+    @inject(INVERIFY_IDENTIFIERS.UserDAO) private userDAO: UserDAO
   ) {}
 
   public async registerUser(userRegisterDto: UserRegisterDtoType): Promise<Result<User, Error>> {
@@ -59,8 +59,8 @@ export class UserService {
     this.logger.info("User login attempt with email: " + userLoginDto.email);
 
     const res = await (await this.userRepository.get(userLoginDto.email))
-      .flatMap(async (user) => (await this.databaseManager.query<string>("SELECT password FROM public.user_model WHERE id = $1", [user.id]))
-        .flatMap(async (safePassword) => (await this.hasher.compare(userLoginDto.password, safePassword[0].password))
+      .flatMap(async (user) => (await this.userDAO.getUserPassword(user.id))
+        .flatMap(async (safePassword) => (await this.hasher.compare(userLoginDto.password, safePassword))
           .flatMap(async () => {
             const secretKey = createSecretKey(new TextEncoder().encode(process.env.JWT_SECRET))
             return await this.jwtAdapter.sign(
@@ -95,8 +95,12 @@ export class UserService {
         return Result.Ok(payload);
       }).flatMap(async (payload) => (await this.userRepository.get(userUpdateDto.userId))
           .flatMap(async (user) => {
-            const res = await this.databaseManager.query<string>("SELECT password FROM public.user_model WHERE id = $1", [user.id]);
-            let safePassword = res.unwrap()[0].password;
+            const res = await this.userDAO.getUserPassword(user.id);
+            if (res.isErr()) {
+              this.logger.error("Error getting user password for user ID: " + userUpdateDto.userId);
+              return Result.Err(res.unwrapErr());
+            }
+            let safePassword = res.unwrap();
             if (userUpdateDto.password) {
               const hashedPassword = await this.hasher.hash(userUpdateDto.password);
               if (hashedPassword.isErr()) {
@@ -170,7 +174,8 @@ export class UserService {
           return Result.Err(new UnauthorizedAccessError("User does not have access to this resource"));
         }
         return Result.Ok(payload);
-      }).flatMap(async () => await this.userRepository.delete(userDeleteDto.userId)
+      }).flatMap(async () => (await this.userRepository.delete(userDeleteDto.userId))
+        .flatMap(() => Result.Ok(true))
       );
 
     return matchRes(res, {

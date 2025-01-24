@@ -47,7 +47,6 @@ export class TypeORMUserRepository implements UserRepository {
     public async get(id: string): Promise<Result<User, Error>> {
         if (id.includes('@')) {
             const entity = await this.repository.findOne({where: {email: id}});
-
             return entity ? Result.Ok(this.toDomain(entity)) : Result.Err(new UserDoesNotExistError("User not found"));
         }
         const entity = await this.repository.findOne({where: {id: id}});

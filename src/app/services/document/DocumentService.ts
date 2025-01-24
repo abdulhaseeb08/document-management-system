@@ -14,7 +14,6 @@ import { DocumentRole } from "../../../shared/enums/DocumentRole";
 import { createSecretKey } from 'crypto';
 import type { JWTAuth } from "../../ports/jwt/jwt";
 import { DocumentAlreadyExistsError, DocumentDoesNotExistError } from "../../errors/DocumentErrors";
-import type { DatabaseManager } from "../../ports/database/database";
 
 @injectable()
 export class DocumentService {
@@ -23,8 +22,7 @@ export class DocumentService {
         @inject(INVERIFY_IDENTIFIERS.Logger) private logger: Logger,
         @inject(FileService) private fileService: FileService,
         @inject(PermissionService) private permissionService: PermissionService,
-        @inject(INVERIFY_IDENTIFIERS.JWT) private jwtAdapter: JWTAuth,
-        @inject(INVERIFY_IDENTIFIERS.DatabaseManager) private databaseManager: DatabaseManager
+        @inject(INVERIFY_IDENTIFIERS.JWT) private jwtAdapter: JWTAuth
     ) {}
 
     public async createDocument(documentCreateDto: DocumentCreateDtoType): Promise<Result<Document, Error>> {
@@ -109,8 +107,8 @@ export class DocumentService {
                                 document.documentMetadata.tags = updateDocumentDto.tags ?? document.documentMetadata.tags;
 
                                 return (await this.fileService.renameFile(oldFilePath, newFilePath))
-                                    .flatMap(async() => {
-                                        return (await DocumentEntity.create(document.creatorId, document.filePath, document.documentMetadata.name, document.documentMetadata.tags, document.documentMetadata.documentFormat, document.id, document.createdAt, userId))
+                                    .flatMap(() => {
+                                        return (DocumentEntity.create(document.creatorId, document.filePath, document.documentMetadata.name, document.documentMetadata.tags, document.documentMetadata.documentFormat, document.id, document.createdAt, userId))
                                             .flatMap(async (entity) => {
                                                 return (await this.documentRepository.update(entity))
                                                     .flatMap(() => Result.Ok(entity));

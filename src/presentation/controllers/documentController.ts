@@ -64,7 +64,6 @@ export class DocumentController {
                     if (typeof combinedParams.tags === 'string') {
                         combinedParams.tags = JSON.parse(combinedParams.tags);
                     }
-                    console.log(combinedParams);
                     return (validateDocumentCreateDto(combinedParams))
                     .flatMap(async (createDocumentDto) => {
                         this.logger.info("Creating document");
@@ -193,7 +192,6 @@ export class DocumentController {
                 return (await this.parseRequestUrl(request))
                     .flatMap((queryParams) => {
                         const combinedParams = Object({ ...queryParams, ...body });
-                        console.log(combinedParams);
                         return validateDocumentSearchDto(combinedParams)
                             .flatMap(async (documentSearchDto) => {
                                 this.logger.info("Searching documents");

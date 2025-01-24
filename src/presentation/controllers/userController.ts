@@ -153,7 +153,7 @@ export class UserController {
         return matchRes(res, {
             Ok: () => {
                 this.logger.info("User deleted successfully");
-                return new Response(null, {status: 204});
+                return new Response(JSON.stringify({ success: true }), {status: 204});
             },
             Err: (error) => {
                 this.logger.error(`Error occurred during user deletion: ${error}`);
