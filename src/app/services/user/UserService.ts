@@ -1,11 +1,9 @@
 import type { UserRepository } from "../../../domain/entities/user/port/UserRepository";
 import type { User } from "../../../domain/entities/user/User";
 import { UserEntity } from "../../../domain/entities/user/UserEntity";
-import { createSecretKey } from 'crypto';
 import type { Hasher } from "../../ports/hasher/Hasher";
 import { injectable, inject } from "inversify";
 import { INVERIFY_IDENTIFIERS } from "../../../infra/di/inversify/inversify.types";
-import { JoseJWTAdapter } from "../../../infra/jwt/joseAdapter";
 import type { Logger } from "../../ports/logger/logger";
 import type { UserRegisterDtoType, UserLoginDtoType, UserUpdateDtoType, UserGetOrDeleteDtoType } from "../../dtos/UserDtos";
 import { Result, matchRes } from "joji-ct-fp";
@@ -14,13 +12,14 @@ import { UnauthorizedAccessError } from "../../errors/TokenErrors";
 import { UserRole } from "../../../shared/enums/UserRole";
 import type { UUID } from "../../../shared/types";
 import type { UserDAO } from "../../ports/user/UserDAO";
+import type { JWTAuth } from "../../ports/jwt/jwt";
 
 @injectable()
 export class UserService {
   constructor(
     @inject(INVERIFY_IDENTIFIERS.UserRepository) private userRepository: UserRepository,
     @inject(INVERIFY_IDENTIFIERS.Hasher) private hasher: Hasher,
-    @inject(INVERIFY_IDENTIFIERS.JWT) private jwtAdapter: JoseJWTAdapter,
+    @inject(INVERIFY_IDENTIFIERS.JWT) private jwtAdapter: JWTAuth,
     @inject(INVERIFY_IDENTIFIERS.Logger) private logger: Logger,
     @inject(INVERIFY_IDENTIFIERS.UserDAO) private userDAO: UserDAO
   ) {}
@@ -62,7 +61,7 @@ export class UserService {
       .flatMap(async (user) => (await this.userDAO.getUserPassword(user.id))
         .flatMap(async (safePassword) => (await this.hasher.compare(userLoginDto.password, safePassword))
           .flatMap(async () => {
-            const secretKey = createSecretKey(new TextEncoder().encode(process.env.JWT_SECRET))
+            const secretKey = this.jwtAdapter.createSecretKey();
             return await this.jwtAdapter.sign(
               { userId: user.id, role: user.userMetadata.userRole }, 
               String(process.env.JWT_ALG), 
@@ -85,7 +84,7 @@ export class UserService {
   public async updateUser(userUpdateDto: UserUpdateDtoType): Promise<Result<User, Error>> {
     this.logger.info("Updating user with ID: " + userUpdateDto.userId);
 
-    const secretKey = createSecretKey(new TextEncoder().encode(process.env.JWT_SECRET));
+    const secretKey = this.jwtAdapter.createSecretKey();
     const res = await (await this.jwtAdapter.verify(userUpdateDto.token, secretKey))
       .flatMap((payload) => {
         if (payload.userId !== userUpdateDto.userId && payload.role !== UserRole.ADMIN) {
@@ -140,7 +139,7 @@ export class UserService {
   public async getUser(userGetDto: UserGetOrDeleteDtoType): Promise<Result<User, Error>> {
     this.logger.info("Fetching user with ID: " + userGetDto.userId);
 
-    const secretKey = createSecretKey(new TextEncoder().encode(process.env.JWT_SECRET));
+    const secretKey = this.jwtAdapter.createSecretKey();
     const res = await (await this.jwtAdapter.verify(userGetDto.token, secretKey))
       .flatMap((payload) => {
         if (payload.userId !== userGetDto.userId && payload.role !== UserRole.ADMIN) {
@@ -166,7 +165,7 @@ export class UserService {
   public async deleteUser(userDeleteDto: UserGetOrDeleteDtoType): Promise<Result<boolean, Error>> {
     this.logger.info("Deleting user with ID: " + userDeleteDto.userId);
 
-    const secretKey = createSecretKey(new TextEncoder().encode(process.env.JWT_SECRET));
+    const secretKey = this.jwtAdapter.createSecretKey();
     const res = await (await this.jwtAdapter.verify(userDeleteDto.token, secretKey))
       .flatMap((payload) => {
         if (payload.userId !== userDeleteDto.userId && payload.role !== UserRole.ADMIN) {

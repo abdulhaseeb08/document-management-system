@@ -5,5 +5,14 @@ export const UUIDSchema = z.string().regex(
     "Invalid UUID"
 )
 
-export type CommandResult<T> = { success: true; value: T } | { success: false; error: Error} ;
+export interface JWTPayload {
+    iss?: string
+    sub?: string
+    aud?: string | string[]
+    jti?: string
+    nbf?: number
+    exp?: number
+    iat?: number
+    [propName: string]: unknown
+  }
 export type UUID = string & { readonly __brand: unique symbol };

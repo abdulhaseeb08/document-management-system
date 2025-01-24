@@ -1,7 +1,6 @@
 import type { UUID } from "../../../shared/types";
 import type { Document } from "../../../domain/entities/document/Document";
 import type { DocumentRepository } from "../../../domain/entities/document/port/DocumentRepository";
-import type { DocumentMetadata } from "../../../domain/valueObjects/DocumentMetadata";
 import { DocumentEntity } from "../../../domain/entities/document/DocumentEntity";
 import { injectable, inject } from "inversify";
 import { INVERIFY_IDENTIFIERS } from "../../../infra/di/inversify/inversify.types";
@@ -11,7 +10,6 @@ import type { DocumentCreateDtoType, DocumentDeleteDtoType, DocumentGetDtoType, 
 import { FileService } from "../file/fileService";
 import { PermissionService } from "../permission/permissionService";
 import { DocumentRole } from "../../../shared/enums/DocumentRole";
-import { createSecretKey } from 'crypto';
 import type { JWTAuth } from "../../ports/jwt/jwt";
 import { DocumentAlreadyExistsError, DocumentDoesNotExistError } from "../../errors/DocumentErrors";
 
@@ -28,7 +26,7 @@ export class DocumentService {
     public async createDocument(documentCreateDto: DocumentCreateDtoType): Promise<Result<Document, Error>> {
         this.logger.info("Starting document creation process");
 
-        const secretKey = createSecretKey(new TextEncoder().encode(process.env.JWT_SECRET));
+        const secretKey = this.jwtAdapter.createSecretKey();
         const res = await (await this.jwtAdapter.verify(documentCreateDto.token, secretKey))
             .flatMap(async (payload) => {
                 const creatorId = payload.userId as UUID;
@@ -79,7 +77,7 @@ export class DocumentService {
     public async updateDocument(updateDocumentDto: DocumentUpdateDtoType): Promise<Result<Document, Error>> {
         this.logger.info("Starting document update process");
 
-        const secretKey = createSecretKey(new TextEncoder().encode(process.env.JWT_SECRET));
+        const secretKey = this.jwtAdapter.createSecretKey();
         const res = await (await this.jwtAdapter.verify(updateDocumentDto.token, secretKey))
             .flatMap(async (payload) => {
                 const userId = payload.userId as UUID;
@@ -126,7 +124,7 @@ export class DocumentService {
 
     public async get(getDocumentDto: DocumentGetDtoType): Promise<Result<Document[], Error>> {
         this.logger.info("Retrieving documents");
-        const secretKey = createSecretKey(new TextEncoder().encode(process.env.JWT_SECRET));
+        const secretKey = this.jwtAdapter.createSecretKey();
         const res = await (await this.jwtAdapter.verify(getDocumentDto.token, secretKey))
             .flatMap(async (payload) => {
                 const extractedUserId = payload.userId as UUID;
@@ -158,7 +156,7 @@ export class DocumentService {
 
     public async downloadDocument(downloadDocumentDto: DownloadDocumentDtoType): Promise<Result<Document, Error>> {
         this.logger.info("Downloading document");
-        const secretKey = createSecretKey(new TextEncoder().encode(process.env.JWT_SECRET));
+        const secretKey = this.jwtAdapter.createSecretKey();
         const res = await (await this.jwtAdapter.verify(downloadDocumentDto.token, secretKey))
             .flatMap(async (payload) => {
                 const extractedUserId = payload.userId as UUID;
@@ -196,7 +194,7 @@ export class DocumentService {
 
     public async deleteDocument(deleteDocumentDto: DocumentDeleteDtoType): Promise<Result<boolean, Error>> {
         this.logger.info("Deleting document");
-        const secretKey = createSecretKey(new TextEncoder().encode(process.env.JWT_SECRET));
+        const secretKey = this.jwtAdapter.createSecretKey();
         const res = await (await this.jwtAdapter.verify(deleteDocumentDto.token, secretKey))
             .flatMap(async (payload) => {
                 const extractedUserId = payload.userId as UUID;
@@ -230,7 +228,7 @@ export class DocumentService {
     }
 
     public async searchRepository(documentSearchDto: DocumentSearchDtoType): Promise<Result<Document[], Error>> {
-        const secretKey = createSecretKey(new TextEncoder().encode(process.env.JWT_SECRET));
+        const secretKey = this.jwtAdapter.createSecretKey();
         const res = await (await this.jwtAdapter.verify(documentSearchDto.token, secretKey))
             .flatMap(async (payload) => {
                 const extractedUserId = payload.userId as UUID;

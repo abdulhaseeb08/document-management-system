@@ -7,7 +7,6 @@ import type { UUID } from "../../../shared/types";
 import type { GrantPermissionDtoType, RevokePermissionDtoType } from "../../dtos/PermissionDtos";
 import { Result, matchRes } from "joji-ct-fp";
 import type { Logger } from "../../ports/logger/logger";
-import { createSecretKey} from "crypto";
 import type { JWTAuth } from "../../ports/jwt/jwt";
 import { PermissionAlreadyExistsError, PermissionDoesNotExistError } from "../../errors/PermissionErrors";
 
@@ -18,7 +17,7 @@ export class PermissionService {
                 @inject(INVERIFY_IDENTIFIERS.Logger) private logger: Logger) {}
 
     public async grantPermission(grantPermissionDto: GrantPermissionDtoType): Promise<Result<Permission, Error>> {
-        const secretKey = createSecretKey(new TextEncoder().encode(process.env.JWT_SECRET));
+        const secretKey = this.jwtAdapter.createSecretKey();
         const res = await (await this.jwtAdapter.verify(grantPermissionDto.token, secretKey))
             .flatMap(async (payload) => {
                 const creatorId = payload.userId as UUID;
@@ -54,7 +53,7 @@ export class PermissionService {
     }
 
     public async revokePermission(revokePermissionDto: RevokePermissionDtoType): Promise<Result<boolean, Error>> {
-        const secretKey = createSecretKey(new TextEncoder().encode(process.env.JWT_SECRET));
+        const secretKey = this.jwtAdapter.createSecretKey();
         const res = await (await this.jwtAdapter.verify(revokePermissionDto.token, secretKey))
             .flatMap(async (payload) => {
                 const creatorId = payload.userId as UUID;
