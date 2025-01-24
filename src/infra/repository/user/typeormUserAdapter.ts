@@ -45,24 +45,18 @@ export class TypeORMUserRepository implements UserRepository {
     }
 
     public async get(id: string): Promise<Result<User, Error>> {
-        console.log("after create connection");
         if (id.includes('@')) {
             const entity = await this.repository.findOne({where: {email: id}});
 
             return entity ? Result.Ok(this.toDomain(entity)) : Result.Err(new UserDoesNotExistError("User not found"));
         }
         const entity = await this.repository.findOne({where: {id: id}});
-        console.log("after get");
-        console.log("after close connection");
         return entity ? Result.Ok(this.toDomain(entity)) : Result.Err(new UserDoesNotExistError("User not found"));
     }
 
     public async delete(id: string): Promise<Result<boolean, Error>> {
-        console.log("insideeee");
-        console.log("after create connection");
         const res = await (await this.get(id))
             .flatMap(async () => Result.Ok(await this.repository.delete(id)))
-        console.log("after close connection");
         return matchRes(res, {
             Ok: () => Result.Ok(true),
             Err: (err) => Result.Err(err)
